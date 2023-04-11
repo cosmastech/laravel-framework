@@ -79,6 +79,12 @@ class DatabaseEloquentIntegrationTest extends TestCase
             $table->timestamps();
         });
 
+        $this->schema('default')->create('date_casting_users', function($table) {
+            $table->increments('id');
+            $table->date('date_of_birth');
+            $table->timestamps();
+        });
+
         foreach (['default', 'second_connection'] as $connection) {
             $this->schema($connection)->create('users', function ($table) {
                 $table->increments('id');
@@ -2101,6 +2107,21 @@ class DatabaseEloquentIntegrationTest extends TestCase
         $this->assertSame('primary', $pivot->taxonomy);
     }
 
+    public function testFillDateWithCustomCast()
+    {
+        $user = EloquentDateCastingUser::create([
+            'date_of_birth' => now()
+        ]);
+
+        $user->refresh();
+
+        $user->fill(['date_of_birth' => '20-10-2000']);
+
+        $user->save();
+
+        $this->assertEquals('20-10-2000', $user->toArray()['date_of_birth']);
+    }
+
     /**
      * Helpers...
      */
@@ -2396,4 +2417,13 @@ class EloquentTouchingComment extends Eloquent
     {
         return $this->belongsTo(EloquentTouchingPost::class, 'post_id');
     }
+}
+
+class EloquentDateCastingUser extends Eloquent
+{
+    protected $table = 'date_casting_users';
+
+    protected $fillable = ['date_of_birth'];
+
+    protected $casts = ['date_of_birth' => 'date:d-m-Y'];
 }
