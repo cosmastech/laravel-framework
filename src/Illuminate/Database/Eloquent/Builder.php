@@ -992,9 +992,41 @@ class Builder implements BuilderContract
      */
     public function create(array $attributes = [])
     {
-        return tap($this->newModelInstance($attributes), function ($instance) {
+        return tap($this->newModelInstance($attributes), function (Model $instance) {
+
             $instance->save();
         });
+    }
+
+    public function createMany(array $values)
+    {
+        if (empty($values)) {
+            return true;
+        }
+
+        if (!is_array(reset($values))) {
+            $values = [$values];
+        }
+
+        $modelInstance = $this->newModelInstance();
+        $timestampColumns = [];
+
+        if ($modelInstance->usesTimestamps()) {
+            $now = $modelInstance->freshTimestamp();
+
+            if ($createdAtColumn = $modelInstance->getCreatedAtColumn()) {
+                $timestampColumns[$createdAtColumn] = $now;
+            }
+            if ($updatedAtColumn = $modelInstance->getUpdatedAtColumn()) {
+                $timestampColumns[$updatedAtColumn] = $now;
+            }
+        }
+
+        foreach ($values as $key => $value) {
+            $values[$key] = $this->newModelInstance(array_merge($timestampColumns, $value))->getAttributes();
+        }
+
+        return $this->toBase()->insert($values);
     }
 
     /**
