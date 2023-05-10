@@ -4,6 +4,7 @@ namespace Illuminate\Tests\Integration\Database;
 
 use Illuminate\Database\Eloquent\Casts\AsEnumArrayObject;
 use Illuminate\Database\Eloquent\Casts\AsEnumCollection;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,7 @@ class EloquentModelEnumCastingTest extends DatabaseTestCase
             $table->json('integer_status_collection')->nullable();
             $table->json('integer_status_array')->nullable();
             $table->string('arrayable_status')->nullable();
+            $table->string('string_status_with_accessor', 100)->nullable();
         });
     }
 
@@ -146,6 +148,7 @@ class EloquentModelEnumCastingTest extends DatabaseTestCase
             'integer_status_collection' => json_encode([1, 2]),
             'integer_status_array' => json_encode([1, 2]),
             'arrayable_status' => 'pending',
+            'string_status_with_accessor' => '',
         ], collect(DB::table('enum_casts')->where('id', $model->id)->first())->map(function ($value) {
             return str_replace(', ', ',', $value);
         })->all());
@@ -174,6 +177,7 @@ class EloquentModelEnumCastingTest extends DatabaseTestCase
             'integer_status_collection' => json_encode([1, 2]),
             'integer_status_array' => json_encode([1, 2]),
             'arrayable_status' => 'pending',
+            'string_status_with_accessor' => '',
         ], collect(DB::table('enum_casts')->where('id', $model->id)->first())->map(function ($value) {
             return str_replace(', ', ',', $value);
         })->all());
@@ -202,6 +206,7 @@ class EloquentModelEnumCastingTest extends DatabaseTestCase
             'integer_status_collection' => null,
             'integer_status_array' => null,
             'arrayable_status' => null,
+            'string_status_with_accessor' => '',
         ], DB::table('enum_casts')->where('id', $model->id)->first());
     }
 
@@ -264,6 +269,15 @@ class EloquentModelEnumCastingTest extends DatabaseTestCase
         $this->assertEquals(StringStatus::pending, $model->string_status);
         $this->assertEquals(StringStatus::done, $model2->string_status);
     }
+
+    public function testCanUseAccessorWithEnum()
+    {
+        $model = EloquentModelEnumCastingTestModel::create([
+            'string_status_with_accessor' => StringStatus::pending,
+        ]);
+
+        $this->assertEquals(StringStatus::pending->value, $model->attributesToArray()['string_status_with_accessor']);
+    }
 }
 
 class EloquentModelEnumCastingTestModel extends Model
@@ -280,5 +294,11 @@ class EloquentModelEnumCastingTestModel extends Model
         'integer_status_collection' => AsEnumCollection::class.':'.IntegerStatus::class,
         'integer_status_array' => AsEnumArrayObject::class.':'.IntegerStatus::class,
         'arrayable_status' => ArrayableStatus::class,
+        'string_status_with_accessor' => StringStatus::class,
     ];
+
+    protected function stringStatusWithAccessor(): Attribute
+    {
+        return Attribute::get(fn($value) => $value);
+    }
 }
