@@ -139,6 +139,26 @@ class EloquentHasManyThroughTest extends DatabaseTestCase
 
         $this->assertEquals([1], $categories->pluck('id')->all());
     }
+
+    public function testCanGroupByWithoutLaravelThroughKey()
+    {
+        $user = User::create(['name' => Str::random()]);
+
+        $team1 = Team::create(['owner_id' => $user->id]);
+
+        User::create(['name' => Str::random(), 'team_id' => $team1->id]);
+
+        dd($user->teammates()->select('team_id', \DB::raw('COUNT(*) as teammates_count'))->groupBy('team_id')->get());
+        $parentCategory = Category::create();
+
+        $category = Category::create(['parent_id' => $parentCategory->id]);
+
+        Product::create(['category_id' => $category->id]);
+
+        //dd($ca    tegory->subProducts()->groupBy('parent_id')->toSql());
+        $results = $category->subProducts()->groupBy('parent_id')->get();
+        $this->assertCount(1, $results);
+    }
 }
 
 class User extends Model

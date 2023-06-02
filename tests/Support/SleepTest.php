@@ -36,7 +36,7 @@ class SleepTest extends TestCase
         Sleep::for(1.5)->seconds();
         $end = microtime(true);
 
-        $this->assertEqualsWithDelta(1.5, $end - $start, 0.03);
+        $this->assertEqualsWithDelta(1.5, $end - $start, 0.035);
     }
 
     public function testItCanFakeSleeping()

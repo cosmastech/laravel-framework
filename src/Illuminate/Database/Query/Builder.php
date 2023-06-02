@@ -2053,6 +2053,7 @@ class Builder implements BuilderContract
      */
     public function groupBy(...$groups)
     {
+        // @lk looking at this
         foreach ($groups as $group) {
             $this->groups = array_merge(
                 (array) $this->groups,
