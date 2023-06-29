@@ -502,6 +502,23 @@ abstract class Relation implements BuilderContract
     }
 
     /**
+     * Get the class alias for a Model.
+     *
+     * @param  string  $className
+     * @return string|null
+     */
+    public static function getClassFromMorphMapAlias(string $className)
+    {
+        $morphMap = self::morphMap();
+
+        if (! empty($morphMap) && in_array($className, $morphMap)) {
+            return array_search($className, $morphMap, true);
+        }
+
+        return null;
+    }
+
+    /**
      * Handle dynamic method calls to the relationship.
      *
      * @param  string  $method
