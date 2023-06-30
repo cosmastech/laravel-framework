@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\MultipleRecordsFoundException;
 use Illuminate\Database\Query\Expression;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Illuminate\Support\Traits\Macroable;
 
@@ -502,12 +503,12 @@ abstract class Relation implements BuilderContract
     }
 
     /**
-     * Get the class alias for a Model.
+     * Retrieve the actual class name for a given morph class.
      *
      * @param  string  $className
      * @return string|null
      */
-    public static function getClassFromMorphMapAlias(string $className)
+    public static function getActualClassNameForMorph(string $className)
     {
         $morphMap = self::morphMap();
 
@@ -516,6 +517,18 @@ abstract class Relation implements BuilderContract
         }
 
         return null;
+    }
+
+    /**
+     * Retrieve the actual class name for a given morph class.
+     *
+     * @param  string  $class
+     * @return string
+     */
+    public static function getActualClassNameForMorphZZZ($class)
+    {
+        //return Relation::getClassFromMorphMapAlias($class) ?? $class;
+        return Arr::get(Relation::morphMap() ?: [], $class, $class);
     }
 
     /**
