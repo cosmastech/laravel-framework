@@ -345,7 +345,7 @@ trait HasRelationships
      */
     public static function getActualClassNameForMorph($class)
     {
-        return Relation::getActualClassNameForMorph($class) ?? 'zzz';
+        return Relation::getClassNameFromMorphMapAlias($class, $class);
     }
 
     /**
@@ -765,7 +765,11 @@ trait HasRelationships
      */
     public function getMorphClass()
     {
-        if (! is_null($alias = Relation::getActualClassNameForMorph(static::class))) {
+        if (! empty($morphMap = Relation::morphMap()) && in_array(static::class, $morphMap)) {
+            return array_search(static::class, $morphMap, true);
+        }
+
+        if (! is_null($alias = Relation::getClassNameFromMorphMapAlias(static::class))) {
             return $alias;
         }
 

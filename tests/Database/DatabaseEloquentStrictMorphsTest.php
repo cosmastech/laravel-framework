@@ -58,9 +58,8 @@ class DatabaseEloquentStrictMorphsTest extends TestCase
             'my_test' => TestModel::class,
         ]);
 
-        $this->assertSame(TestModel::class, Relation::getActualClassNameForMorph('my_test'));
-        $this->assertNull(Relation::getActualClassNameForMorph('bogus'));
-        dd(Model::getActualClassNameForMorph('my_test'));
+        $this->assertSame(TestModel::class, Relation::getClassNameFromMorphMapAlias('my_test'));
+        $this->assertNull(Relation::getClassNameFromMorphMapAlias('bogus'));
     }
 
     public function testMapIgnoreGenericPivotClass()

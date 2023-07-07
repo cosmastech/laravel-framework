@@ -503,32 +503,31 @@ abstract class Relation implements BuilderContract
     }
 
     /**
-     * Retrieve the actual class name for a given morph class.
+     * Retrieve the actual class name for a given morph alias.
      *
-     * @param  string  $className
-     * @return string|null
+     * @param  string  $alias
+     * @param  mixed  $default
+     * @return string
      */
-    public static function getActualClassNameForMorph(string $className)
+    public static function getClassNameFromMorphMapAlias($alias, $default = null)
     {
-        $morphMap = self::morphMap();
+        return Arr::get(self::morphMap() ?: [], $alias, $default);
+    }
+
+    /**
+     * @param  mixed  $className
+     * @param  mixed  $default
+     * @return mixed
+     */
+    public static function getAliasFromClassName($className, $default = null)
+    {
+        $morphMap = Relation::morphMap();
 
         if (! empty($morphMap) && in_array($className, $morphMap)) {
             return array_search($className, $morphMap, true);
         }
 
-        return null;
-    }
-
-    /**
-     * Retrieve the actual class name for a given morph class.
-     *
-     * @param  string  $class
-     * @return string
-     */
-    public static function getActualClassNameForMorphZZZ($class)
-    {
-        //return Relation::getClassFromMorphMapAlias($class) ?? $class;
-        return Arr::get(Relation::morphMap() ?: [], $class, $class);
+        return $default;
     }
 
     /**

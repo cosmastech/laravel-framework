@@ -462,6 +462,7 @@ trait QueriesRelationships
         }
 
         if (is_string($model)) {
+            $model = Relation::getMorphedModel()
             $morphMap = Relation::morphMap();
 
             if (! empty($morphMap) && in_array($model, $morphMap)) {
