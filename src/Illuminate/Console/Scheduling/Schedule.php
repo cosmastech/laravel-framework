@@ -90,7 +90,7 @@ class Schedule
      *
      * @var array<int, string>
      */
-    protected $allowedEventProperties = [
+    protected $allowableGlobalEventProperties = [
         'onOneServer',
         'timezone',
         'user',
@@ -112,7 +112,7 @@ class Schedule
     {
         $this->timezone = $timezone;
 
-        if (! class_exists(Container::class)) {
+        if (!class_exists(Container::class)) {
             throw new RuntimeException(
                 'A container implementation is required to use the scheduler. Please install the illuminate/container package.'
             );
@@ -121,12 +121,12 @@ class Schedule
         $container = Container::getInstance();
 
         $this->eventMutex = $container->bound(EventMutex::class)
-                                ? $container->make(EventMutex::class)
-                                : $container->make(CacheEventMutex::class);
+            ? $container->make(EventMutex::class)
+            : $container->make(CacheEventMutex::class);
 
         $this->schedulingMutex = $container->bound(SchedulingMutex::class)
-                                ? $container->make(SchedulingMutex::class)
-                                : $container->make(CacheSchedulingMutex::class);
+            ? $container->make(SchedulingMutex::class)
+            : $container->make(CacheSchedulingMutex::class);
     }
 
     /**
@@ -216,7 +216,7 @@ class Schedule
     protected function dispatchToQueue($job, $queue, $connection)
     {
         if ($job instanceof Closure) {
-            if (! class_exists(CallQueuedClosure::class)) {
+            if (!class_exists(CallQueuedClosure::class)) {
                 throw new RuntimeException(
                     'To enable support for closure jobs, please install the illuminate/queue package.'
                 );
@@ -246,11 +246,11 @@ class Schedule
      */
     protected function dispatchUniqueJobToQueue($job, $queue, $connection)
     {
-        if (! Container::getInstance()->bound(Cache::class)) {
+        if (!Container::getInstance()->bound(Cache::class)) {
             throw new RuntimeException('Cache driver not available. Scheduling unique jobs not supported.');
         }
 
-        if (! (new UniqueLock(Container::getInstance()->make(Cache::class)))->acquire($job)) {
+        if (!(new UniqueLock(Container::getInstance()->make(Cache::class)))->acquire($job)) {
             return;
         }
 
@@ -301,7 +301,7 @@ class Schedule
                 return $this->compileArrayInput($key, $value);
             }
 
-            if (! is_numeric($value) && ! preg_match('/^(-.$|--.*)/i', $value)) {
+            if (!is_numeric($value) && !preg_match('/^(-.$|--.*)/i', $value)) {
                 $value = ProcessUtils::escapeArgument($value);
             }
 
@@ -417,11 +417,11 @@ class Schedule
      * @param  callable(Schedule): void|null  $callback
      * @return void
      */
-    public function withEventDefaults(array $defaults, $callback = null)
+    public function globalOptions(array $defaults, $callback = null)
     {
         foreach ($defaults as $key => $value) {
-            if (! in_array($key, $this->allowedEventProperties)) {
-                throw new InvalidArgumentException("Invalid attribute: {$key}");
+            if (!in_array($key, $this->allowableGlobalEventProperties)) {
+                throw new InvalidArgumentException("Invalid attribute [{$key}]");
             }
         }
 
@@ -432,7 +432,7 @@ class Schedule
         }
 
         $schedule = tap(new static($this->timezone), function (Schedule $schedule) use ($defaults, $callback) {
-            $schedule->withEventDefaults($defaults);
+            $schedule->globalOptions($defaults);
             call_user_func($callback, $schedule);
         });
 

@@ -14,7 +14,7 @@ class CommandWithDefaultsTest extends TestCase
     {
         $schedule = new Schedule();
 
-        $schedule->withEventDefaults([$property => $value]);
+        $schedule->globalOptions([$property => $value]);
 
         $schedule->call('/path/to/command');
         $schedule->call(SomeJob::class);
@@ -29,7 +29,7 @@ class CommandWithDefaultsTest extends TestCase
         $schedule = new Schedule();
 
         $schedule->call('/path/to/command')->{$property} = $value;
-        $schedule->withEventDefaults([$property => $value], function ($schedule) {
+        $schedule->globalOptions([$property => $value], function ($schedule) {
             $schedule->call('/path/to/command');
         });
         $dummyEvent = $schedule->call('/path/to/command');
