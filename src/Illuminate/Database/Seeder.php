@@ -5,6 +5,7 @@ namespace Illuminate\Database;
 use Illuminate\Console\Command;
 use Illuminate\Console\View\Components\TwoColumnDetail;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Database\Console\Seeds\WithoutForeignKeyConstraints;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Support\Arr;
 use InvalidArgumentException;
@@ -188,6 +189,10 @@ abstract class Seeder
 
         if (isset($uses[WithoutModelEvents::class])) {
             $callback = $this->withoutModelEvents($callback);
+        }
+
+        if(isset($uses[WithoutForeignKeyConstraints::class])) {
+            $callback = $this->withoutForeignKeyConstraints($callback);
         }
 
         return $callback();

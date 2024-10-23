@@ -4,14 +4,17 @@ namespace Illuminate\Tests\Database;
 
 use Illuminate\Console\OutputStyle;
 use Illuminate\Console\View\Components\Factory;
+use Illuminate\Container\Attributes\Database;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\Console\Seeds\SeedCommand;
+use Illuminate\Database\Console\Seeds\WithoutForeignKeyConstraints;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Events\NullDispatcher;
+use Illuminate\Foundation\Application;
 use Illuminate\Testing\Assert;
 use Mockery as m;
 use PHPUnit\Framework\TestCase;
@@ -103,11 +106,33 @@ class SeedCommandTest extends TestCase
         $container->shouldHaveReceived('call')->with([$command, 'handle']);
     }
 
+    public function Delete_ME_testWithoutForeignKeyConstraints_deleteMe()
+    {
+        Application::setInstance($container = new Application);
+
+        $instance = new UserWithoutForeignKeyConstraintsSeeder();
+        $instance->setContainer(Application::getInstance());
+
+        $instance->__invoke();
+
+        $this->assertEquals(1, UserWithoutForeignKeyConstraintsSeeder::$timesCalled);
+    }
+
+    public function testWithoutForeignKeyConstraints()
+    {
+        $instance = new UserWithoutForeignKeyConstraintsSeeder();
+
+
+    }
+
     protected function tearDown(): void
     {
         Model::unsetEventDispatcher();
 
         m::close();
+
+        UserWithoutForeignKeyConstraintsSeeder::$timesCalled = 0;
+        Application::setInstance(null);
     }
 }
 
@@ -118,5 +143,16 @@ class UserWithoutModelEventsSeeder extends Seeder
     public function run()
     {
         Assert::assertInstanceOf(NullDispatcher::class, Model::getEventDispatcher());
+    }
+}
+
+class UserWithoutForeignKeyConstraintsSeeder extends Seeder
+{
+    use WithoutForeignKeyConstraints;
+
+    public static int $timesCalled = 0;
+    public function run()
+    {
+        self::$timesCalled++;
     }
 }
