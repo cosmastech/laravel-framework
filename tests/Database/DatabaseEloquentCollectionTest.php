@@ -62,6 +62,8 @@ class DatabaseEloquentCollectionTest extends TestCase
         $this->schema()->drop('articles');
         $this->schema()->drop('comments');
         m::close();
+
+        ModelNotFoundException::setModelNameResolver(null);
     }
 
     public function testAddingItemsToCollection()
@@ -695,6 +697,22 @@ class DatabaseEloquentCollectionTest extends TestCase
 
         $this->assertCount(1, $collection->except([$fooKey]));
         $this->assertSame($bar, $collection->except($fooKey)->first());
+    }
+
+    public function test_custom_model_name_resolver_used_when_model_not_found()
+    {
+        ModelNotFoundException::setModelNameResolver(
+            static fn(string $modelClass) => class_basename($modelClass)
+        );
+        $model1 = (new TestEloquentCollectionModel)->forceFill(['id' => 1]);
+        $model2 = (new TestEloquentCollectionModel)->forceFill(['id' => 2]);
+
+        $collection = new Collection([$model1, $model2]);
+
+        $this->expectException(ModelNotFoundException::class);
+        $this->expectExceptionMessage('No query results for model [TestEloquentCollectionModel] 3');
+
+        $collection->findOrFail([1,2,3]);
     }
 
     /**

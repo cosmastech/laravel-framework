@@ -11,6 +11,11 @@ use Illuminate\Support\Arr;
 class ModelNotFoundException extends RecordsNotFoundException
 {
     /**
+     * @var (\Closure(string): string|null)|null
+     */
+    protected static $modelNameResolver;
+
+    /**
      * Name of the affected Eloquent model.
      *
      * @var class-string<TModel>
@@ -36,7 +41,11 @@ class ModelNotFoundException extends RecordsNotFoundException
         $this->model = $model;
         $this->ids = Arr::wrap($ids);
 
-        $this->message = "No query results for model [{$model}]";
+        $this->message = 'No query results for model';
+
+        if ($resolvedModelName = $this->resolveModelName($model)) {
+            $this->message .= " [{$resolvedModelName}]";
+        }
 
         if (count($this->ids) > 0) {
             $this->message .= ' '.implode(', ', $this->ids);
@@ -65,5 +74,25 @@ class ModelNotFoundException extends RecordsNotFoundException
     public function getIds()
     {
         return $this->ids;
+    }
+
+    /**
+     * @param  (\Closure(string): string)|null  $resolver
+     * @return void
+     */
+    public static function setModelNameResolver($resolver)
+    {
+        self::$modelNameResolver = $resolver;
+    }
+
+    /**
+     * @param  class-string<TModel>  $model
+     * @return string|null
+     */
+    protected function resolveModelName($model)
+    {
+        $resolver = self::$modelNameResolver ?? static fn($model) => $model;
+
+        return $resolver($model);
     }
 }

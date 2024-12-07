@@ -22,6 +22,13 @@ class EloquentWhereTest extends DatabaseTestCase
         });
     }
 
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        ModelNotFoundException::setModelNameResolver(null);
+    }
+
     public function testWhereAndWhereOrBehavior()
     {
         /** @var \Illuminate\Tests\Integration\Database\UserWhereTest $firstUser */
@@ -288,6 +295,19 @@ class EloquentWhereTest extends DatabaseTestCase
         }
 
         $this->assertSame(UserWhereTest::class, $exception->getModel());
+    }
+
+    public function test_sole_fails_uses_model_name_resolver_for_exception()
+    {
+        ModelNotFoundException::setModelNameResolver(static fn() => 'zzzz');
+        try {
+            UserWhereTest::where('name', 'nonexistent')->sole();
+        } catch (ModelNotFoundException $exception) {
+            //
+        }
+
+        $this->assertSame(UserWhereTest::class, $exception->getModel());
+        $this->assertSame('No query results for model [zzzz].', $exception->getMessage());
     }
 
     public function testSoleValue()

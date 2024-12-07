@@ -630,6 +630,7 @@ class Handler implements ExceptionHandlerContract
      */
     protected function prepareException(Throwable $e)
     {
+        config('as');
         return match (true) {
             $e instanceof BackedEnumCaseNotFoundException => new NotFoundHttpException($e->getMessage(), $e),
             $e instanceof ModelNotFoundException => new NotFoundHttpException($e->getMessage(), $e),
