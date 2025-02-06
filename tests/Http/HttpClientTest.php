@@ -3472,6 +3472,17 @@ class HttpClientTest extends TestCase
 
         $this->assertInstanceOf(PendingRequest::class, $factory->createPendingRequest());
     }
+
+    public function test_can_pass_flags_to_json()
+    {
+        $this->factory->fake(['url.test' => '{"trailing_zero":1.0}']);
+
+        $response = $this->factory->get('http://url.test');
+        $json = $response->json(flags: JSON_PRESERVE_ZERO_FRACTION);
+
+        $this->assertEqualsCanonicalizing(['trailing_zero' => 1.0], $json);
+    }
+
 }
 
 class CustomFactory extends Factory

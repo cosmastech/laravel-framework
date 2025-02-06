@@ -29,7 +29,7 @@ class Response implements ArrayAccess, Stringable
     /**
      * The decoded JSON response.
      *
-     * @var array
+     * @var array<int, array>
      */
     protected $decoded;
 
@@ -73,19 +73,20 @@ class Response implements ArrayAccess, Stringable
      *
      * @param  string|null  $key
      * @param  mixed  $default
+     * @param  int  $flags
      * @return mixed
      */
-    public function json($key = null, $default = null)
+    public function json($key = null, $default = null, $flags = 0)
     {
-        if (! $this->decoded) {
-            $this->decoded = json_decode($this->body(), true);
+        if (! $this->decoded || ! array_key_exists($flags, $this->decoded)) {
+            $this->decoded[$flags] = json_decode($this->body(), true, flags: $flags);
         }
 
         if (is_null($key)) {
-            return $this->decoded;
+            return $this->decoded[$flags];
         }
 
-        return data_get($this->decoded, $key, $default);
+        return data_get($this->decoded[$flags], $key, $default);
     }
 
     /**
