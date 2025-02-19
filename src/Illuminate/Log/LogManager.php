@@ -66,6 +66,13 @@ class LogManager implements LoggerInterface
     protected $dateFormat = 'Y-m-d H:i:s';
 
     /**
+     * The LogRecord key to write Contextual data to.
+     *
+     * @var 'extra'|'context'
+     */
+    protected $contextKey = 'extra';
+
+    /**
      * Create a new Log manager instance.
      *
      * @param  \Illuminate\Contracts\Foundation\Application  $app
@@ -148,10 +155,16 @@ class LogManager implements LoggerInterface
                             return $record;
                         }
 
-                        return $record->with(extra: [
-                            ...$record->extra,
-                            ...$this->app[ContextRepository::class]->all(),
-                        ]);
+                        if ($this->contextKey === 'context') {
+                            return $record->with(context: [
+                                ...$this->app[ContextRepository::class]->all(),
+                                ...$record->context,
+                            ]);
+                        }
+
+                        $record->extra = array_merge($record->extra, $this->app[ContextRepository::class]->all());
+
+                        return $record;
                     });
                 }
 
@@ -164,6 +177,25 @@ class LogManager implements LoggerInterface
                 ]);
             });
         }
+    }
+
+    /**
+     * Set the LogRecord property where Context data is set.
+     *
+     * @param  'context'|'extra'  $contextKey
+     * @return $this
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function writeContextualDataTo(string $contextKey)
+    {
+        if (! in_array($contextKey, ['context', 'extra'])) {
+            throw new InvalidArgumentException("Contextual data can be written to 'extra' or 'context'.");
+        }
+
+        $this->contextKey = $contextKey;
+
+        return $this;
     }
 
     /**

@@ -494,6 +494,23 @@ class ContextTest extends TestCase
         file_put_contents($path, '');
         Str::createUuidsNormally();
     }
+
+    public function test_it_can_write_to_context()
+    {
+        Log::writeContextualDataTo('context');
+
+        Context::add('from-context', true);
+        Context::add('trace-id', 'abcd-1234');
+
+        $path = storage_path('logs/laravel.log');
+        file_put_contents($path, '');
+        Log::channel('single')->info('Hello', ['trace-id' => 'zzzz-9999']);
+
+        $log = Str::after(file_get_contents($path), '] ');
+
+        $this->assertSame('testing.INFO: Hello {"from-context":true,"trace-id":"zzzz-9999"}', Str::trim($log));
+        file_put_contents($path, '');
+    }
 }
 
 enum Suit
