@@ -26,6 +26,7 @@ use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Queue\Console\WorkCommand;
 use Illuminate\Queue\Queue;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\ClassUsesRecursiveStore;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\ParallelTesting;
 use Illuminate\Support\Once;
@@ -166,6 +167,7 @@ trait InteractsWithTestCaseLifecycle
 
         AboutCommand::flushState();
         Artisan::forgetBootstrappers();
+        ClassUsesRecursiveStore::flush();
         Component::flushCache();
         Component::forgetComponentsResolver();
         Component::forgetFactory();
