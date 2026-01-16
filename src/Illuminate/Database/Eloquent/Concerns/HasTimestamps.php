@@ -28,6 +28,7 @@ trait HasTimestamps
      */
     public function touch($attribute = null)
     {
+        // Luke -- look here
         if ($attribute) {
             $this->$attribute = $this->freshTimestamp();
 
@@ -51,6 +52,7 @@ trait HasTimestamps
      */
     public function touchQuietly($attribute = null)
     {
+        // Luke -- look here
         return static::withoutEvents(fn () => $this->touch($attribute));
     }
 
@@ -61,6 +63,7 @@ trait HasTimestamps
      */
     public function updateTimestamps()
     {
+        // Luke -- look here
         $time = $this->freshTimestamp();
 
         $updatedAtColumn = $this->getUpdatedAtColumn();
@@ -86,6 +89,7 @@ trait HasTimestamps
      */
     public function setCreatedAt($value)
     {
+        // Luke -- look here
         $this->{$this->getCreatedAtColumn()} = $value;
 
         return $this;
@@ -99,6 +103,7 @@ trait HasTimestamps
      */
     public function setUpdatedAt($value)
     {
+        // Luke -- look here
         $this->{$this->getUpdatedAtColumn()} = $value;
 
         return $this;

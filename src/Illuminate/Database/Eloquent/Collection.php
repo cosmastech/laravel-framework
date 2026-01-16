@@ -89,6 +89,7 @@ class Collection extends BaseCollection implements QueueableCollection
      */
     public function load($relations)
     {
+        // Luke -- look here
         if ($this->isNotEmpty()) {
             if (is_string($relations)) {
                 $relations = func_get_args();
@@ -112,6 +113,7 @@ class Collection extends BaseCollection implements QueueableCollection
      */
     public function loadAggregate($relations, $column, $function = null)
     {
+        // Luke -- look here
         if ($this->isEmpty()) {
             return $this;
         }
@@ -147,6 +149,7 @@ class Collection extends BaseCollection implements QueueableCollection
      */
     public function loadCount($relations)
     {
+        // Luke -- look here
         return $this->loadAggregate($relations, '*', 'count');
     }
 
@@ -159,6 +162,7 @@ class Collection extends BaseCollection implements QueueableCollection
      */
     public function loadMax($relations, $column)
     {
+        // Luke -- look here
         return $this->loadAggregate($relations, $column, 'max');
     }
 
@@ -171,6 +175,7 @@ class Collection extends BaseCollection implements QueueableCollection
      */
     public function loadMin($relations, $column)
     {
+        // Luke -- look here
         return $this->loadAggregate($relations, $column, 'min');
     }
 
@@ -183,6 +188,7 @@ class Collection extends BaseCollection implements QueueableCollection
      */
     public function loadSum($relations, $column)
     {
+        // Luke -- look here
         return $this->loadAggregate($relations, $column, 'sum');
     }
 
@@ -195,6 +201,7 @@ class Collection extends BaseCollection implements QueueableCollection
      */
     public function loadAvg($relations, $column)
     {
+        // Luke -- look here
         return $this->loadAggregate($relations, $column, 'avg');
     }
 
@@ -206,6 +213,7 @@ class Collection extends BaseCollection implements QueueableCollection
      */
     public function loadExists($relations)
     {
+        // Luke -- look here
         return $this->loadAggregate($relations, '*', 'exists');
     }
 
@@ -217,6 +225,7 @@ class Collection extends BaseCollection implements QueueableCollection
      */
     public function loadMissing($relations)
     {
+        // Luke -- look here
         if (is_string($relations)) {
             $relations = func_get_args();
         }
@@ -318,6 +327,7 @@ class Collection extends BaseCollection implements QueueableCollection
      */
     public function loadMorph($relation, $relations)
     {
+        // Luke -- look here
         $this->pluck($relation)
             ->filter()
             ->groupBy(fn ($model) => get_class($model))
@@ -335,6 +345,7 @@ class Collection extends BaseCollection implements QueueableCollection
      */
     public function loadMorphCount($relation, $relations)
     {
+        // Luke -- look here
         $this->pluck($relation)
             ->filter()
             ->groupBy(fn ($model) => get_class($model))

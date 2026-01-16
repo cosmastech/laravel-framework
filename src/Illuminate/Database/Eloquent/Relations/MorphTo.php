@@ -234,6 +234,7 @@ class MorphTo extends BelongsTo
     #[\Override]
     public function associate($model)
     {
+        // Luke -- look here
         if ($model instanceof Model) {
             $foreignKey = $this->ownerKey && $model->{$this->ownerKey}
                 ? $this->ownerKey
@@ -259,6 +260,7 @@ class MorphTo extends BelongsTo
     #[\Override]
     public function dissociate()
     {
+        // Luke -- look here
         $this->parent->setAttribute($this->foreignKey, null);
 
         $this->parent->setAttribute($this->morphType, null);

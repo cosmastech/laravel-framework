@@ -1093,6 +1093,7 @@ trait HasRelationships
      */
     public function setRelation($relation, $value)
     {
+        // Luke -- look here
         $this->relations[$relation] = $value;
 
         $this->propagateRelationAutoloadCallbackToRelation($relation, $value);
@@ -1121,6 +1122,7 @@ trait HasRelationships
      */
     public function setRelations(array $relations)
     {
+        // Luke -- look here
         $this->relations = $relations;
 
         return $this;

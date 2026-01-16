@@ -184,6 +184,7 @@ class BelongsTo extends Relation
      */
     public function associate($model)
     {
+        // Luke -- look here
         $ownerKey = $model instanceof Model ? $model->getAttribute($this->ownerKey) : $model;
 
         $this->child->setAttribute($this->foreignKey, $ownerKey);
@@ -204,6 +205,7 @@ class BelongsTo extends Relation
      */
     public function dissociate()
     {
+        // Luke -- look here
         $this->child->setAttribute($this->foreignKey, null);
 
         return $this->child->setRelation($this->relationName, null);

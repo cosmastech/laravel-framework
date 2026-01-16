@@ -607,6 +607,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function fill(array $attributes)
     {
+        // Luke -- look here
         $totallyGuarded = $this->totallyGuarded();
 
         $fillable = $this->fillableFromArray($attributes);
@@ -655,6 +656,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function forceFill(array $attributes)
     {
+        // Luke -- look here
         return static::unguarded(fn () => $this->fill($attributes));
     }
 
@@ -793,6 +795,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function load($relations)
     {
+        // Luke -- look here
         $query = $this->newQueryWithoutRelationships()->with(
             is_string($relations) ? func_get_args() : $relations
         );
@@ -811,6 +814,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function loadMorph($relation, $relations)
     {
+        // Luke -- look here
         if (! $this->{$relation}) {
             return $this;
         }
@@ -830,6 +834,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function loadMissing($relations)
     {
+        // Luke -- look here
         $relations = is_string($relations) ? func_get_args() : $relations;
 
         $this->newCollection([$this])->loadMissing($relations);
@@ -847,6 +852,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function loadAggregate($relations, $column, $function = null)
     {
+        // Luke -- look here
         $this->newCollection([$this])->loadAggregate($relations, $column, $function);
 
         return $this;
@@ -860,6 +866,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function loadCount($relations)
     {
+        // Luke -- look here
         $relations = is_string($relations) ? func_get_args() : $relations;
 
         return $this->loadAggregate($relations, '*', 'count');
@@ -874,6 +881,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function loadMax($relations, $column)
     {
+        // Luke -- look here
         return $this->loadAggregate($relations, $column, 'max');
     }
 
@@ -886,6 +894,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function loadMin($relations, $column)
     {
+        // Luke -- look here
         return $this->loadAggregate($relations, $column, 'min');
     }
 
@@ -898,6 +907,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function loadSum($relations, $column)
     {
+        // Luke -- look here
         return $this->loadAggregate($relations, $column, 'sum');
     }
 
@@ -910,6 +920,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function loadAvg($relations, $column)
     {
+        // Luke -- look here
         return $this->loadAggregate($relations, $column, 'avg');
     }
 
@@ -921,6 +932,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function loadExists($relations)
     {
+        // Luke -- look here
         return $this->loadAggregate($relations, '*', 'exists');
     }
 
@@ -935,6 +947,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function loadMorphAggregate($relation, $relations, $column, $function = null)
     {
+        // Luke -- look here
         if (! $this->{$relation}) {
             return $this;
         }
@@ -955,6 +968,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function loadMorphCount($relation, $relations)
     {
+        // Luke -- look here
         return $this->loadMorphAggregate($relation, $relations, '*', 'count');
     }
 
@@ -968,6 +982,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function loadMorphMax($relation, $relations, $column)
     {
+        // Luke -- look here
         return $this->loadMorphAggregate($relation, $relations, $column, 'max');
     }
 
@@ -981,6 +996,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function loadMorphMin($relation, $relations, $column)
     {
+        // Luke -- look here
         return $this->loadMorphAggregate($relation, $relations, $column, 'min');
     }
 
@@ -994,6 +1010,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function loadMorphSum($relation, $relations, $column)
     {
+        // Luke -- look here
         return $this->loadMorphAggregate($relation, $relations, $column, 'sum');
     }
 
@@ -1007,6 +1024,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function loadMorphAvg($relation, $relations, $column)
     {
+        // Luke -- look here
         return $this->loadMorphAggregate($relation, $relations, $column, 'avg');
     }
 
@@ -1020,6 +1038,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     protected function increment($column, $amount = 1, array $extra = [])
     {
+        // Luke -- look here
         return $this->incrementOrDecrement($column, $amount, $extra, 'increment');
     }
 
@@ -1033,6 +1052,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     protected function decrement($column, $amount = 1, array $extra = [])
     {
+        // Luke -- look here
         return $this->incrementOrDecrement($column, $amount, $extra, 'decrement');
     }
 
@@ -1083,6 +1103,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function update(array $attributes = [], array $options = [])
     {
+        // Luke -- look here
         if (! $this->exists) {
             return false;
         }
@@ -1101,6 +1122,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function updateOrFail(array $attributes = [], array $options = [])
     {
+        // Luke -- look here
         if (! $this->exists) {
             return false;
         }
@@ -1117,6 +1139,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function updateQuietly(array $attributes = [], array $options = [])
     {
+        // Luke -- look here
         if (! $this->exists) {
             return false;
         }
@@ -1134,6 +1157,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     protected function incrementQuietly($column, $amount = 1, array $extra = [])
     {
+        // Luke -- look here
         return static::withoutEvents(
             fn () => $this->incrementOrDecrement($column, $amount, $extra, 'increment')
         );
@@ -1149,6 +1173,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     protected function decrementQuietly($column, $amount = 1, array $extra = [])
     {
+        // Luke -- look here
         return static::withoutEvents(
             fn () => $this->incrementOrDecrement($column, $amount, $extra, 'decrement')
         );
@@ -1161,6 +1186,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function push()
     {
+        // Luke -- look here
         return $this->withoutRecursion(function () {
             if (! $this->save()) {
                 return false;
@@ -1192,6 +1218,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function pushQuietly()
     {
+        // Luke -- look here
         return static::withoutEvents(fn () => $this->push());
     }
 
@@ -1203,6 +1230,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function saveQuietly(array $options = [])
     {
+        // Luke -- look here
         return static::withoutEvents(fn () => $this->save($options));
     }
 
@@ -1214,6 +1242,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function save(array $options = [])
     {
+        // Luke -- look here
         $this->mergeAttributesFromCachedCasts();
 
         $query = $this->newModelQuery();
@@ -1485,6 +1514,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function delete()
     {
+        // Luke -- look here
         $this->mergeAttributesFromCachedCasts();
 
         if (is_null($this->getKeyName())) {
@@ -1524,6 +1554,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function deleteQuietly()
     {
+        // Luke -- look here
         return static::withoutEvents(fn () => $this->delete());
     }
 
@@ -1536,6 +1567,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function deleteOrFail()
     {
+        // Luke -- look here
         if (! $this->exists) {
             return false;
         }
@@ -1552,6 +1584,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function forceDelete()
     {
+        // Luke -- look here
         return $this->delete();
     }
 
@@ -1850,6 +1883,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function refresh()
     {
+        // Luke -- look here
         if (! $this->exists) {
             return $this;
         }
@@ -2432,6 +2466,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function __set($key, $value)
     {
+        // Luke -- look here
         $this->setAttribute($key, $value);
     }
 
@@ -2474,6 +2509,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function offsetSet($offset, $value): void
     {
+        // Luke -- look here
         $this->setAttribute($offset, $value);
     }
 
@@ -2485,6 +2521,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function offsetUnset($offset): void
     {
+        // Luke -- look here
         unset(
             $this->attributes[$offset],
             $this->relations[$offset],

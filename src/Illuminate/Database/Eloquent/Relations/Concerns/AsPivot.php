@@ -129,6 +129,7 @@ trait AsPivot
      */
     public function delete()
     {
+        // Luke -- look here
         if (isset($this->attributes[$this->getKeyName()])) {
             return (int) parent::delete();
         }

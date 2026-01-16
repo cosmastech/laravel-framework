@@ -21,6 +21,7 @@ trait InteractsWithPivotTable
      */
     public function toggle($ids, $touch = true)
     {
+        // Luke -- look here
         $changes = [
             'attached' => [], 'detached' => [],
         ];
@@ -71,6 +72,7 @@ trait InteractsWithPivotTable
      */
     public function syncWithoutDetaching($ids)
     {
+        // Luke -- look here
         return $this->sync($ids, false);
     }
 
@@ -83,6 +85,7 @@ trait InteractsWithPivotTable
      */
     public function sync($ids, $detaching = true)
     {
+        // Luke -- look here
         $changes = [
             'attached' => [], 'detached' => [], 'updated' => [],
         ];
@@ -141,6 +144,7 @@ trait InteractsWithPivotTable
      */
     public function syncWithPivotValues($ids, array $values, bool $detaching = true)
     {
+        // Luke -- look here
         return $this->sync((new BaseCollection($this->parseIds($ids)))->mapWithKeys(function ($id) use ($values) {
             return [$id => $values];
         }), $detaching);
@@ -211,6 +215,7 @@ trait InteractsWithPivotTable
      */
     public function updateExistingPivot($id, array $attributes, $touch = true)
     {
+        // Luke -- look here
         if ($this->using) {
             return $this->updateExistingPivotUsingCustomClass($id, $attributes, $touch);
         }
@@ -265,6 +270,7 @@ trait InteractsWithPivotTable
      */
     public function attach($ids, array $attributes = [], $touch = true)
     {
+        // Luke -- look here
         if ($this->using) {
             $this->attachUsingCustomClass($ids, $attributes);
         } else {
@@ -433,6 +439,7 @@ trait InteractsWithPivotTable
      */
     public function detach($ids = null, $touch = true)
     {
+        // Luke -- look here
         if ($this->using) {
             $results = $this->detachUsingCustomClass($ids);
         } else {

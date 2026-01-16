@@ -277,6 +277,7 @@ abstract class HasOneOrMany extends Relation
      */
     public function updateOrCreate(array $attributes, array $values = [])
     {
+        // Luke -- look here
         return tap($this->firstOrCreate($attributes, $values), function ($instance) use ($values) {
             if (! $instance->wasRecentlyCreated) {
                 $instance->fill($values)->save();
@@ -294,6 +295,7 @@ abstract class HasOneOrMany extends Relation
      */
     public function upsert(array $values, $uniqueBy, $update = null)
     {
+        // Luke -- look here
         if (! empty($values) && ! is_array(array_first($values))) {
             $values = [$values];
         }
@@ -313,6 +315,7 @@ abstract class HasOneOrMany extends Relation
      */
     public function save(Model $model)
     {
+        // Luke -- look here
         $this->setForeignAttributesForCreate($model);
 
         return $model->save() ? $model : false;
@@ -326,6 +329,7 @@ abstract class HasOneOrMany extends Relation
      */
     public function saveQuietly(Model $model)
     {
+        // Luke -- look here
         return Model::withoutEvents(function () use ($model) {
             return $this->save($model);
         });
@@ -339,6 +343,7 @@ abstract class HasOneOrMany extends Relation
      */
     public function saveMany($models)
     {
+        // Luke -- look here
         foreach ($models as $model) {
             $this->save($model);
         }
@@ -354,6 +359,7 @@ abstract class HasOneOrMany extends Relation
      */
     public function saveManyQuietly($models)
     {
+        // Luke -- look here
         return Model::withoutEvents(function () use ($models) {
             return $this->saveMany($models);
         });
@@ -367,6 +373,7 @@ abstract class HasOneOrMany extends Relation
      */
     public function create(array $attributes = [])
     {
+        // Luke -- look here
         return tap($this->related->newInstance($attributes), function ($instance) {
             $this->setForeignAttributesForCreate($instance);
 
@@ -384,6 +391,7 @@ abstract class HasOneOrMany extends Relation
      */
     public function createQuietly(array $attributes = [])
     {
+        // Luke -- look here
         return Model::withoutEvents(fn () => $this->create($attributes));
     }
 
@@ -395,6 +403,7 @@ abstract class HasOneOrMany extends Relation
      */
     public function forceCreate(array $attributes = [])
     {
+        // Luke -- look here
         $attributes[$this->getForeignKeyName()] = $this->getParentKey();
 
         return $this->applyInverseRelationToModel($this->related->forceCreate($attributes));
@@ -408,6 +417,7 @@ abstract class HasOneOrMany extends Relation
      */
     public function forceCreateQuietly(array $attributes = [])
     {
+        // Luke -- look here
         return Model::withoutEvents(fn () => $this->forceCreate($attributes));
     }
 
@@ -419,6 +429,7 @@ abstract class HasOneOrMany extends Relation
      */
     public function createMany(iterable $records)
     {
+        // Luke -- look here
         $instances = $this->related->newCollection();
 
         foreach ($records as $record) {
@@ -436,6 +447,7 @@ abstract class HasOneOrMany extends Relation
      */
     public function createManyQuietly(iterable $records)
     {
+        // Luke -- look here
         return Model::withoutEvents(fn () => $this->createMany($records));
     }
 
@@ -447,6 +459,7 @@ abstract class HasOneOrMany extends Relation
      */
     public function forceCreateMany(iterable $records)
     {
+        // Luke -- look here
         $instances = $this->related->newCollection();
 
         foreach ($records as $record) {
@@ -464,6 +477,7 @@ abstract class HasOneOrMany extends Relation
      */
     public function forceCreateManyQuietly(iterable $records)
     {
+        // Luke -- look here
         return Model::withoutEvents(fn () => $this->forceCreateMany($records));
     }
 

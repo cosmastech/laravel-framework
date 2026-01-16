@@ -548,6 +548,7 @@ trait HasAttributes
      */
     public function getRelationValue($key)
     {
+        // Luke -- look here
         // If the key already exists in the relationships array, it just means the
         // relationship has already been loaded, so we'll just return it out of
         // here because there is no need to query within the relations twice.
@@ -1059,6 +1060,7 @@ trait HasAttributes
      */
     public function setAttribute($key, $value)
     {
+        // Luke -- look here
         // First we will check for the presence of a mutator for the set operation
         // which simply lets the developers tweak the attribute as it is set on
         // this model, such as "json_encoding" a listing of data for storage.
@@ -1212,6 +1214,7 @@ trait HasAttributes
      */
     public function fillJsonAttribute($key, $value)
     {
+        // Luke -- look here
         [$key, $path] = explode('->', $key, 2);
 
         $value = $this->asJson($this->getArrayAttributeWithValue(
@@ -1985,6 +1988,7 @@ trait HasAttributes
      */
     public function setRawAttributes(array $attributes, $sync = false)
     {
+        // Luke -- look here
         $this->attributes = $attributes;
 
         if ($sync) {
