@@ -22,21 +22,27 @@ trait Freezes
     /**
      * Indicates if all models should be frozen in the current context.
      *
-     * @var bool
+     * @var bool|null true for explicitly enabled, false for explicitly disabled, null for no context checking
      */
-    protected static bool $frozenContext = false;
+    protected static ?bool $frozenContext = null;
+
+    /**
+     * @var (\Closure(\Illuminate\Database\Eloquent\Model, string))|null
+     */
+    protected static ?Closure $handleFrozenViolationCallback = null;
 
     /**
      * Execute a callback within a frozen context.
      * All models retrieved within the callback will be automatically frozen.
      *
      * @param  \Closure  $callback
+     * @param  bool  $frozen
      * @return mixed
      */
-    public static function frozen(Closure $callback): mixed
+    public static function frozen(Closure $callback, bool $frozen = true): mixed
     {
         $originalContext = self::$frozenContext;
-        self::$frozenContext = true;
+        self::$frozenContext = $frozen;
 
         try {
             return $callback();
@@ -52,13 +58,14 @@ trait Freezes
      */
     public static function isInFrozenContext(): bool
     {
-        return self::$frozenContext;
+        return self::$frozenContext === true;
     }
 
     /**
      * Freeze the model, preventing mutations and lazy loading.
      *
      * @template T of bool = true
+     *
      * @return self<T>
      *
      * @phpstan-self-out self<T>
@@ -76,6 +83,7 @@ trait Freezes
      * Unfreeze the model, allowing mutations and lazy loading.
      *
      * @return self<false>
+     *
      * @phpstan-self-out self<false>
      */
     public function unfreeze(): static
@@ -107,8 +115,12 @@ trait Freezes
      */
     protected function throwIfFrozen(string $operation): void
     {
-        if ($this->frozen || self::$frozenContext) {
-            throw new FrozenModelException($this, $operation);
+        if ($this->isFrozen() || self::isInFrozenContext()) {
+            if (! isset(self::$handleFrozenViolationCallback)) {
+                throw new FrozenModelException($this, $operation);
+            }
+
+            call_user_func(self::$handleFrozenViolationCallback, $this, $operation);
         }
     }
 

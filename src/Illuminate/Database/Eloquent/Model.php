@@ -37,7 +37,8 @@ use function Illuminate\Support\enum_value;
 
 abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToString, HasBroadcastChannel, Jsonable, JsonSerializable, QueueableEntity, Stringable, UrlRoutable
 {
-    use Concerns\HasAttributes,
+    use Concerns\Freezes,
+        Concerns\HasAttributes,
         Concerns\HasEvents,
         Concerns\HasGlobalScopes,
         Concerns\HasRelationships,
@@ -302,7 +303,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
 
         $this->syncOriginal();
 
-        $this->fill($attributes);
+        self::frozen(fn () => $this->fill($attributes), false);
     }
 
     /**
@@ -607,7 +608,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function fill(array $attributes)
     {
-        // Luke -- look here
+        $this->throwIfFrozen('fill');
         $totallyGuarded = $this->totallyGuarded();
 
         $fillable = $this->fillableFromArray($attributes);
@@ -656,7 +657,6 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function forceFill(array $attributes)
     {
-        // Luke -- look here
         return static::unguarded(fn () => $this->fill($attributes));
     }
 
@@ -1103,7 +1103,6 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function update(array $attributes = [], array $options = [])
     {
-        // Luke -- look here
         if (! $this->exists) {
             return false;
         }
@@ -1122,7 +1121,6 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function updateOrFail(array $attributes = [], array $options = [])
     {
-        // Luke -- look here
         if (! $this->exists) {
             return false;
         }
@@ -1139,7 +1137,6 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function updateQuietly(array $attributes = [], array $options = [])
     {
-        // Luke -- look here
         if (! $this->exists) {
             return false;
         }
