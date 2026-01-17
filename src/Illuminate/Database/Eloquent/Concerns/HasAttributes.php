@@ -1060,7 +1060,7 @@ trait HasAttributes
      */
     public function setAttribute($key, $value)
     {
-        // Luke -- look here
+        $this->throwIfFrozen('setAttribute');
         // First we will check for the presence of a mutator for the set operation
         // which simply lets the developers tweak the attribute as it is set on
         // this model, such as "json_encoding" a listing of data for storage.
