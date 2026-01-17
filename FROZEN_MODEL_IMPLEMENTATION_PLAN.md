@@ -45,6 +45,7 @@ This document outlines the implementation plan for adding a "frozen" Model conce
 #### 1.1 Create the Exception
 **File:** `src/Illuminate/Database/Eloquent/FrozenModelException.php`
 
+This is done.
 ```php
 <?php
 
@@ -72,6 +73,7 @@ class FrozenModelException extends RuntimeException
 #### 1.2 Create the Concern/Trait
 **File:** `src/Illuminate/Database/Eloquent/Concerns/IsFrozen.php`
 
+This is done.
 ```php
 <?php
 
