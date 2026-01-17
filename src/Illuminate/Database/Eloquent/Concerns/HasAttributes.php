@@ -1988,7 +1988,6 @@ trait HasAttributes
      */
     public function setRawAttributes(array $attributes, $sync = false)
     {
-        // Luke -- look here
         $this->attributes = $attributes;
 
         if ($sync) {

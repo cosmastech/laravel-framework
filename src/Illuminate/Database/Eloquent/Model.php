@@ -1880,10 +1880,11 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function refresh()
     {
-        // Luke -- look here
         if (! $this->exists) {
             return $this;
         }
+
+        $this->throwIfFrozen('refresh');
 
         $this->setRawAttributes(
             $this->setKeysForSelectQuery($this->newQueryWithoutScopes())
