@@ -71,9 +71,15 @@ class FrozenModelException extends RuntimeException
 ```
 
 #### 1.2 Create the Concern/Trait
-**File:** `src/Illuminate/Database/Eloquent/Concerns/IsFrozen.php`
+**File:** `src/Illuminate/Database/Eloquent/Concerns/Freezes.php` *(renamed from IsFrozen)*
 
-This is done.
+DONE - Includes:
+- `freeze()` / `unfreeze()` / `isFrozen()` instance methods
+- `frozen(Closure $callback, bool $frozen = true)` static method for context-based freezing
+- `isInFrozenContext()` static method
+- `throwIfFrozen(string $operation)` guard method
+- `freezeRelations()` / `unfreezeRelations()` for cascading to loaded relations
+- `$handleFrozenViolationCallback` for custom violation handling
 ```php
 <?php
 
@@ -212,63 +218,63 @@ This allows static analysis tools to track frozen state at compile time.
 #### 2.1 Methods to Guard (with `throwIfFrozen()`)
 
 **Model.php:**
-- `fill()` - "fill attributes"
-- `forceFill()` - "force fill attributes"
-- `save()` - "save"
-- `saveQuietly()` - "save"
-- `saveOrFail()` - "save"
-- `update()` - "update"
-- `updateOrFail()` - "update"
-- `updateQuietly()` - "update"
-- `delete()` - "delete"
-- `deleteQuietly()` - "delete"
-- `deleteOrFail()` - "delete"
-- `forceDelete()` - "force delete"
-- `push()` - "push"
-- `pushQuietly()` - "push"
-- `refresh()` - "refresh"
-- `increment()` - "increment"
-- `decrement()` - "decrement"
-- `incrementQuietly()` - "increment"
-- `decrementQuietly()` - "decrement"
-- `__set()` - "set attribute"
-- `offsetSet()` - "set attribute"
-- `offsetUnset()` - "unset attribute"
+- [x] `fill()` - "fill attributes" *(directly guarded)*
+- [x] `forceFill()` - "force fill attributes" *(calls fill())*
+- [ ] `save()` - "save"
+- [ ] `saveQuietly()` - "save"
+- [ ] `saveOrFail()` - "save"
+- [x] `update()` - "update" *(calls fill())*
+- [x] `updateOrFail()` - "update" *(calls fill())*
+- [x] `updateQuietly()` - "update" *(calls fill())*
+- [ ] `delete()` - "delete"
+- [ ] `deleteQuietly()` - "delete"
+- [ ] `deleteOrFail()` - "delete"
+- [ ] `forceDelete()` - "force delete"
+- [ ] `push()` - "push"
+- [ ] `pushQuietly()` - "push"
+- [ ] `refresh()` - "refresh"
+- [ ] `increment()` - "increment"
+- [ ] `decrement()` - "decrement"
+- [ ] `incrementQuietly()` - "increment"
+- [ ] `decrementQuietly()` - "decrement"
+- [x] `__set()` - "set attribute" *(calls setAttribute())*
+- [x] `offsetSet()` - "set attribute" *(calls setAttribute())*
+- [ ] `offsetUnset()` - "unset attribute"
 
 **HasAttributes.php:**
-- `setAttribute()` - "set attribute"
-- `setRawAttributes()` - "set attributes"
-- `fillJsonAttribute()` - "fill JSON attribute"
-- `getRelationValue()` - "load relationship" (only if not already loaded)
+- [x] `setAttribute()` - "set attribute" *(directly guarded)*
+- [ ] `setRawAttributes()` - "set attributes"
+- [ ] `fillJsonAttribute()` - "fill JSON attribute"
+- [ ] `getRelationValue()` - "load relationship" (only if not already loaded)
 
 **HasRelationships.php:**
-- `setRelation()` - "set relation" (debatable - might want to allow for hydration)
-- `setRelations()` - "set relations"
+- [ ] `setRelation()` - "set relation" (debatable - might want to allow for hydration)
+- [ ] `setRelations()` - "set relations"
 
 **HasTimestamps.php:**
-- `touch()` - "touch"
-- `touchQuietly()` - "touch"
-- `updateTimestamps()` - "update timestamps"
-- `setCreatedAt()` - "set timestamp"
-- `setUpdatedAt()` - "set timestamp"
+- [ ] `touch()` - "touch"
+- [ ] `touchQuietly()` - "touch"
+- [ ] `updateTimestamps()` - "update timestamps"
+- [x] `setCreatedAt()` - "set timestamp" *(uses __set -> setAttribute())*
+- [x] `setUpdatedAt()` - "set timestamp" *(uses __set -> setAttribute())*
 
 **Relationship Loading (Model.php):**
-- `load()` - "load relationship"
-- `loadMissing()` - "load relationship"
-- `loadMorph()` - "load relationship"
-- `loadAggregate()` - "load aggregate"
-- `loadCount()` - "load count"
-- `loadMax()` - "load max"
-- `loadMin()` - "load min"
-- `loadSum()` - "load sum"
-- `loadAvg()` - "load avg"
-- `loadExists()` - "load exists"
-- `loadMorphAggregate()` - "load aggregate"
-- `loadMorphCount()` - "load count"
-- `loadMorphMax()` - "load max"
-- `loadMorphMin()` - "load min"
-- `loadMorphSum()` - "load sum"
-- `loadMorphAvg()` - "load avg"
+- [ ] `load()` - "load relationship"
+- [ ] `loadMissing()` - "load relationship"
+- [ ] `loadMorph()` - "load relationship"
+- [ ] `loadAggregate()` - "load aggregate"
+- [ ] `loadCount()` - "load count"
+- [ ] `loadMax()` - "load max"
+- [ ] `loadMin()` - "load min"
+- [ ] `loadSum()` - "load sum"
+- [ ] `loadAvg()` - "load avg"
+- [ ] `loadExists()` - "load exists"
+- [ ] `loadMorphAggregate()` - "load aggregate"
+- [ ] `loadMorphCount()` - "load count"
+- [ ] `loadMorphMax()` - "load max"
+- [ ] `loadMorphMin()` - "load min"
+- [ ] `loadMorphSum()` - "load sum"
+- [ ] `loadMorphAvg()` - "load avg"
 
 ---
 
@@ -533,6 +539,18 @@ $users->first()->save(); // Throws FrozenModelException
 // Query builder
 $users = User::query()->frozen()->get();
 $users->first()->delete(); // Throws FrozenModelException
+
+// Static frozen context - ALL models retrieved in callback are frozen
+Model::frozen(function () {
+    $user = User::find(1);
+    $posts = Post::all();
+
+    $user->name = 'New'; // Throws FrozenModelException
+    $posts->first()->title = 'New'; // Throws FrozenModelException
+});
+
+// Disable frozen context temporarily (useful in constructors/hydration)
+Model::frozen(fn () => $model->fill($attributes), frozen: false);
 
 // Relationship loading blocked
 $user = User::find(1)->freeze();

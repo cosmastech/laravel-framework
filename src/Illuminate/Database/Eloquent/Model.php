@@ -1227,7 +1227,6 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function saveQuietly(array $options = [])
     {
-        // Luke -- look here
         return static::withoutEvents(fn () => $this->save($options));
     }
 
@@ -1239,7 +1238,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     public function save(array $options = [])
     {
-        // Luke -- look here
+        $this->throwIfFrozen('save');
         $this->mergeAttributesFromCachedCasts();
 
         $query = $this->newModelQuery();
@@ -1319,6 +1318,7 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     protected function performUpdate(Builder $query)
     {
+        $this->throwIfFrozen('performUpdate');
         // If the updating event returns false, we will cancel the update operation so
         // developers can hook Validation systems into their models and cancel this
         // operation if the model does not pass validation. Otherwise, we update.
@@ -1403,6 +1403,8 @@ abstract class Model implements Arrayable, ArrayAccess, CanBeEscapedWhenCastToSt
      */
     protected function performInsert(Builder $query)
     {
+        $this->throwIfFrozen('performInsert');
+
         if ($this->usesUniqueIds()) {
             $this->setUniqueIds();
         }
