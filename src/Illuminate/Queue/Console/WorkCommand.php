@@ -237,7 +237,7 @@ class WorkCommand extends Command
         $this->output->write(rtrim(sprintf(
             '  <fg=gray>%s</> %s %s',
             $this->now()->format('Y-m-d H:i:s'),
-            $job->resolveName(),
+            $job->resolveName(), // ????
             $isVerbose
                 ? sprintf('<fg=gray>%s</> <fg=blue>%s</> <fg=blue>%s</>', $job->getJobId(), $job->getConnectionName(), $job->getQueue())
                 : ''

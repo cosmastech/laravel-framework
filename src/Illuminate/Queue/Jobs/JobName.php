@@ -2,6 +2,7 @@
 
 namespace Illuminate\Queue\Jobs;
 
+use Illuminate\Queue\Queue;
 use Illuminate\Support\Str;
 
 class JobName
@@ -40,10 +41,10 @@ class JobName
      * @param  array<string, mixed>  $payload
      * @return string
      */
-    public static function resolveClassName($name, $payload)
+    public static function resolveClassName($name, $payload): string
     {
         if (is_string($payload['data']['commandName'] ?? null)) {
-            return $payload['data']['commandName'];
+            return Queue::getCommandClassFromName($payload['data']['commandName']);
         }
 
         return $name;

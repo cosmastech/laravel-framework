@@ -59,6 +59,26 @@ abstract class Queue
      */
     protected static $createPayloadCallbacks = [];
 
+    protected static $classMapping = [];
+
+    /**
+     * Set class serialization mapping.
+     *
+     * @param  array<string, class-string>|null  $map
+     * @param  bool  $merge
+     * @return array<string, class-string>
+     */
+    public static function withClassMappings(?array $map = null, bool $merge = true)
+    {
+        if (is_array($map)) {
+            static::$classMapping = $merge && static::$classMapping
+                ? $map + static::$classMapping
+                : $map;
+        }
+
+        return static::$classMapping;
+    }
+
     /**
      * Push a new job onto the queue.
      *
@@ -190,10 +210,43 @@ abstract class Queue
 
         return array_merge($payload, [
             'data' => array_merge($payload['data'], [
-                'commandName' => get_class($job),
+                'commandName' => $this->getCommandName($job),
                 'command' => $command,
             ]),
         ]);
+    }
+
+    public static function getCommandName(object $job): string
+    {
+        foreach(self::$classMapping as $mappedName => $jobClass) {
+            if ($job::class === $jobClass) {
+                return 'mapped:'.$mappedName;
+            }
+        }
+
+        return $job::class;
+    }
+
+    /**
+     * Resolve the command class string from its named identifier.
+     *
+     * @param  string|class-string  $name
+     * @return class-string
+     */
+    public static function getCommandClassFromName(string $name): string
+    {
+        if (! str_starts_with($name, 'mapped:')) {
+            return $name;
+        }
+
+        $cleanNamed = Str::after($name, 'mapped:');
+        foreach(self::$classMapping as $mappedName => $jobClass) {
+            if ($cleanNamed === $mappedName) {
+                return $jobClass;
+            }
+        }
+
+        return $name;
     }
 
     /**
