@@ -13,6 +13,7 @@ use Illuminate\Foundation\Http\Attributes\RedirectTo;
 use Illuminate\Foundation\Http\Attributes\RedirectToRoute;
 use Illuminate\Foundation\Http\Attributes\StopOnFirstFailure;
 use Illuminate\Foundation\Http\Concerns\CastsValidatedData;
+use Illuminate\Foundation\Http\Concerns\HandlesCasters;
 use Illuminate\Foundation\Http\Concerns\InfersValidationRules;
 use Illuminate\Foundation\Http\Concerns\ResolvesNestedMetadata;
 use Illuminate\Foundation\Precognition;
@@ -30,6 +31,7 @@ use ReflectionParameter;
 class TypedFormRequestFactory
 {
     use CastsValidatedData;
+    use HandlesCasters;
     use InfersValidationRules;
     use ResolvesNestedMetadata;
 
@@ -319,18 +321,17 @@ class TypedFormRequestFactory
 
             $typeName = $type->getName();
 
-            if (! is_subclass_of($typeName, TypedFormRequest::class)) {
+            if (is_subclass_of($typeName, TypedFormRequest::class) && Arr::has($data, $fieldName) && is_array($value = Arr::get($data, $fieldName))) {
+                Arr::set($data, $fieldName, $this->nestedFactory($typeName)->mergeRequestData($value));
+
                 continue;
             }
 
-            if (Arr::has($data, $fieldName) && is_array($value = Arr::get($data, $fieldName))) {
-                Arr::set($data, $fieldName, $this->nestedFactory($typeName)->mergeRequestData($value));
-            }
+            // @todo should we add a method to the interface that allows setting the default value?
         }
 
         return $data;
     }
-
 
     /**
      * Get the reflected TypedFormRequest class.

@@ -35,6 +35,7 @@ trait InfersValidationRules
      */
     protected function inferredRulesFromTypes(): array
     {
+        // @todo what is the precedence of custom casters versus WithoutInferringRules... it seems like if they don't want any inference, then they probably just want to use the rules array from the class we're building?
         if (($constructor = $this->reflectRequest()->getConstructor()) === null || $this->reflectRequest()->getAttributes(WithoutInferringRules::class) !== []) {
             return [];
         }
@@ -107,6 +108,7 @@ trait InfersValidationRules
     {
         $name = $type->getName();
 
+        // @todo do we put this here above?
         if ($type->isBuiltin()) {
             return match ($name) {
                 'int' => 'integer',
