@@ -25,7 +25,7 @@ trait HandlesCasters
         static::$casters = $merge ? array_merge(static::$casters, $casters) : $casters;
     }
 
-    protected function hasCast(ReflectionNamedType $type): bool
+    protected function hasCaster(ReflectionNamedType $type): ?TypedRequestCaster
     {
         $this->prepareCasters($this->mergeCasts());
 
@@ -33,11 +33,11 @@ trait HandlesCasters
         // parameter is the type or is a child of the type.
         foreach ($this->castersCache as $typeName => $typedRequestCaster) {
             if (is_a($type->getName(), $typeName, true)) {
-                return true;
+                return $typedRequestCaster;
             }
         }
 
-        return false;
+        return null;
     }
 
     /**

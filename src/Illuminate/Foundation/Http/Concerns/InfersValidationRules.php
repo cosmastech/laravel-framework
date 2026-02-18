@@ -3,10 +3,12 @@
 namespace Illuminate\Foundation\Http\Concerns;
 
 use BackedEnum;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\Attributes\HydrateFromRequest;
 use Illuminate\Foundation\Http\Attributes\WithoutInferringRules;
 use Illuminate\Foundation\Http\TypedFormRequest;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
@@ -56,7 +58,7 @@ trait InfersValidationRules
     /**
      * Infer validation rules for the given constructor parameter.
      *
-     * @return list<string|\Illuminate\Contracts\Validation\Rule|\Illuminate\Contracts\Validation\ValidatorAwareRule>
+     * @return array<array-key, string|\Illuminate\Contracts\Validation\Rule|\Illuminate\Contracts\Validation\ValidatorAwareRule>
      */
     protected function rulesForParameter(ReflectionParameter $param): array
     {
@@ -99,16 +101,36 @@ trait InfersValidationRules
         return $rules;
     }
 
+    protected function mergeRules(array $rules, mixed $typedRule): array
+    {
+        if ($typedRule === null) {
+            return $rules;
+        }
+
+        if (is_string($typedRule) || $typedRule instanceof Rule || $typedRule instanceof ValidationRule) {
+            $rules[] = $typedRule;
+            return $rules;
+        }
+
+        if (Arr::isAssoc($typedRule)) {
+
+        }
+    }
+
     /**
      * Infer a validation rule for a named type.
      *
-     * @return string|\Illuminate\Contracts\Validation\ValidatorAwareRule|\Illuminate\Contracts\Validation\Rule|null
+     * @return string|\Illuminate\Contracts\Validation\ValidatorAwareRule|\Illuminate\Contracts\Validation\Rule|array<array-key, mixed>|null
      */
     protected function ruleForNamedType(ReflectionNamedType $type): mixed
     {
         $name = $type->getName();
 
-        // @todo do we put this here above?
+        // @todo do we put this here above? so that people could override stuff if they wanted to?
+        if ($caster = $this->hasCaster($type)) {
+            return $caster->rules($name);
+        }
+
         if ($type->isBuiltin()) {
             return match ($name) {
                 'int' => 'integer',
@@ -140,6 +162,7 @@ trait InfersValidationRules
             }
 
             $branchRule = $this->ruleForNamedType($named);
+            // @todo we need to handle merging an array if non-assoc
 
             if ($branchRule === null) {
                 return null;
@@ -176,7 +199,8 @@ trait InfersValidationRules
             return 'date';
         }
 
-        if (is_subclass_of($name, TypedFormRequest::class) || is_a($name, Collection::class, true) || is_a($name, stdClass::class, true)) {
+        if (is_subclass_of($name, TypedFormRequest::class) || is_a($name, Collection::class, true) || is_a($name,
+                stdClass::class, true)) {
             return 'array';
         }
 
