@@ -13,6 +13,7 @@ interface TypedRequestCaster
     /**
      * The validation rule(s) to infer for this type.
      *
+     * @param string  $param The request parameter name
      * @return string|array|\Illuminate\Contracts\Validation\Rule|null
      */
     public function rules(string $param);

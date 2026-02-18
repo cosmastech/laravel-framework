@@ -3,7 +3,6 @@
 namespace Illuminate\Foundation\Http\Concerns;
 
 use BackedEnum;
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\Attributes\HydrateFromRequest;
 use Illuminate\Foundation\Http\Attributes\WithoutInferringRules;
 use Illuminate\Foundation\Http\TypedFormRequest;
@@ -37,7 +36,6 @@ trait InfersValidationRules
      */
     protected function inferredRulesFromTypes(): array
     {
-        // @todo what is the precedence of custom casters versus WithoutInferringRules... it seems like if they don't want any inference, then they probably just want to use the rules array from the class we're building?
         if (($constructor = $this->reflectRequest()->getConstructor()) === null || $this->reflectRequest()->getAttributes(WithoutInferringRules::class) !== []) {
             return [];
         }
@@ -45,10 +43,23 @@ trait InfersValidationRules
         $rules = [];
 
         foreach ($constructor->getParameters() as $param) {
+            if ($param->getAttributes(WithoutInferringRules::class) !== []) {
+                continue;
+            }
+
+            $fieldName = $this->fieldNameFor($param);
+            $type = $param->getType();
+
+            if ($type instanceof ReflectionNamedType && ($caster = $this->hasCaster($type))) {
+                $this->mergeCasterRules($rules, $caster->rules($fieldName), $fieldName, $param);
+
+                continue;
+            }
+
             $paramRules = $this->rulesForParameter($param);
 
             if ($paramRules !== []) {
-                $rules[$this->fieldNameFor($param)] = $paramRules;
+                $rules[$fieldName] = $paramRules;
             }
         }
 
@@ -58,14 +69,40 @@ trait InfersValidationRules
     /**
      * Infer validation rules for the given constructor parameter.
      *
-     * @return array<array-key, string|\Illuminate\Contracts\Validation\Rule|\Illuminate\Contracts\Validation\ValidatorAwareRule>
+     * @return list<string|\Illuminate\Contracts\Validation\Rule|\Illuminate\Contracts\Validation\ValidatorAwareRule>
      */
     protected function rulesForParameter(ReflectionParameter $param): array
     {
-        if ($param->getAttributes(WithoutInferringRules::class) !== []) {
+        $type = $param->getType();
+
+        if (! $type instanceof ReflectionType) {
             return [];
         }
 
+        $rules = $this->baseRulesForParameter($param);
+
+        if ($param->getAttributes(HydrateFromRequest::class) !== []) {
+            $typeRule = 'array';
+        } else {
+            $typeRule = $type instanceof ReflectionUnionType
+                ? $this->ruleForUnionType($type)
+                : ($type instanceof ReflectionNamedType ? $this->ruleForNamedType($type) : null);
+        }
+
+        if ($typeRule !== null) {
+            $rules[] = $typeRule;
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Get the base validation rules (required/nullable/sometimes) for a parameter.
+     *
+     * @return list<string>
+     */
+    protected function baseRulesForParameter(ReflectionParameter $param): array
+    {
         $type = $param->getType();
 
         if (! $type instanceof ReflectionType) {
@@ -86,50 +123,72 @@ trait InfersValidationRules
             $rules[] = 'nullable';
         }
 
-        if ($param->getAttributes(HydrateFromRequest::class) !== []) {
-            $typeRule = 'array';
-        } else {
-            $typeRule = $type instanceof ReflectionUnionType
-                ? $this->ruleForUnionType($type)
-                : ($type instanceof ReflectionNamedType ? $this->ruleForNamedType($type) : null);
-        }
-
-        if ($typeRule !== null) {
-            $rules[] = $typeRule;
-        }
-
         return $rules;
     }
 
-    protected function mergeRules(array $rules, mixed $typedRule): array
+    /**
+     * Merge caster-provided rules into the rules array, combining with base parameter rules.
+     *
+     * @param  array<string, mixed>  $rules
+     */
+    protected function mergeCasterRules(array &$rules, mixed $casterRules, string $fieldName, ReflectionParameter $param): void
     {
-        if ($typedRule === null) {
-            return $rules;
+        $baseRules = $this->baseRulesForParameter($param);
+        $normalized = $this->normalizeCasterRules($casterRules, $fieldName);
+
+        // Merge base rules (required/nullable/sometimes) with the primary field's caster rules.
+        $primaryRules = $normalized[$fieldName] ?? [];
+        unset($normalized[$fieldName]);
+
+        $merged = array_merge($baseRules, $primaryRules);
+
+        if ($merged !== []) {
+            $rules[$fieldName] = $merged;
         }
 
-        if (is_string($typedRule) || $typedRule instanceof Rule || $typedRule instanceof ValidationRule) {
-            $rules[] = $typedRule;
-            return $rules;
+        // Merge any sibling field rules the caster declared.
+        foreach ($normalized as $field => $fieldRules) {
+            $rules[$field] = array_merge($rules[$field] ?? [], $fieldRules);
+        }
+    }
+
+    /**
+     * Normalize caster rules into a keyed array of [field => [rules]].
+     *
+     * @return array<string, list<mixed>>
+     */
+    protected function normalizeCasterRules(mixed $casterRules, string $fieldName): array
+    {
+        if ($casterRules === null) {
+            return [];
         }
 
-        if (Arr::isAssoc($typedRule)) {
-
+        if (is_string($casterRules)) {
+            return [$fieldName => explode('|', $casterRules)];
         }
+
+        if (! is_array($casterRules)) {
+            return [$fieldName => [$casterRules]];
+        }
+
+        if (Arr::isAssoc($casterRules)) {
+            return array_map(
+                fn ($r) => is_string($r) ? explode('|', $r) : Arr::wrap($r),
+                $casterRules,
+            );
+        }
+
+        return [$fieldName => $casterRules];
     }
 
     /**
      * Infer a validation rule for a named type.
      *
-     * @return string|\Illuminate\Contracts\Validation\ValidatorAwareRule|\Illuminate\Contracts\Validation\Rule|array<array-key, mixed>|null
+     * @return string|\Illuminate\Contracts\Validation\ValidatorAwareRule|\Illuminate\Contracts\Validation\Rule|null
      */
     protected function ruleForNamedType(ReflectionNamedType $type): mixed
     {
         $name = $type->getName();
-
-        // @todo do we put this here above? so that people could override stuff if they wanted to?
-        if ($caster = $this->hasCaster($type)) {
-            return $caster->rules($name);
-        }
 
         if ($type->isBuiltin()) {
             return match ($name) {
@@ -162,7 +221,6 @@ trait InfersValidationRules
             }
 
             $branchRule = $this->ruleForNamedType($named);
-            // @todo we need to handle merging an array if non-assoc
 
             if ($branchRule === null) {
                 return null;
@@ -181,7 +239,7 @@ trait InfersValidationRules
     /**
      * Infer a validation rule for a non-builtin named type.
      *
-     * @return string|\Illuminate\Contracts\Validation\ValidatorAwareRule|\Illuminate\Contracts\Validation\Rule
+     * @return string|\Illuminate\Contracts\Validation\ValidatorAwareRule|\Illuminate\Contracts\Validation\Rule|null
      */
     protected function ruleForNonBuiltinType(ReflectionNamedType $type): mixed
     {
@@ -199,8 +257,7 @@ trait InfersValidationRules
             return 'date';
         }
 
-        if (is_subclass_of($name, TypedFormRequest::class) || is_a($name, Collection::class, true) || is_a($name,
-                stdClass::class, true)) {
+        if (is_subclass_of($name, TypedFormRequest::class) || is_a($name, Collection::class, true) || is_a($name, stdClass::class, true)) {
             return 'array';
         }
 

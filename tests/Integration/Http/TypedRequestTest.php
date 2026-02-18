@@ -8,6 +8,7 @@ use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Contracts\Foundation\TypedRequestCaster;
 use Illuminate\Foundation\Http\Attributes\HydrateFromRequest;
 use Illuminate\Foundation\Http\Attributes\MapFrom;
 use Illuminate\Foundation\Http\Attributes\RedirectTo;
@@ -15,6 +16,7 @@ use Illuminate\Foundation\Http\Attributes\RedirectToRoute;
 use Illuminate\Foundation\Http\Attributes\StopOnFirstFailure;
 use Illuminate\Foundation\Http\Attributes\WithoutInferringRules;
 use Illuminate\Foundation\Http\TypedFormRequest;
+use Illuminate\Foundation\Http\TypedFormRequestFactory;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -26,6 +28,12 @@ use stdClass;
 
 class TypedRequestTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        TypedFormRequestFactory::withCasters([], false);
+        parent::tearDown();
+    }
+
     public function testSimplifiedRequestDtoValidatesAndBuilds()
     {
         $request = Request::create('', parameters: ['number' => 42, 'string' => 'a']);
@@ -1578,6 +1586,71 @@ class TypedRequestTest extends TestCase
             $this->assertNull($e->redirectTo);
         }
     }
+
+    public function testCustomCasterInfersRulesAndCastsValue()
+    {
+        TypedFormRequestFactory::withCasters([
+            MyCollection::class => MyCollectionCaster::class,
+        ]);
+
+        try {
+            $request = Request::create('', parameters: [
+                'items' => ['a', 'b', 'c'],
+            ]);
+            $this->app->instance('request', $request);
+
+            $actual = $this->app->make(CasterCollectionRequest::class);
+
+            $this->assertInstanceOf(CasterCollectionRequest::class, $actual);
+            $this->assertInstanceOf(MyCollection::class, $actual->items);
+            $this->assertSame(['a', 'b', 'c'], $actual->items->all);
+        } finally {
+            TypedFormRequestFactory::withCasters([], merge: false);
+        }
+    }
+
+    public function testCustomCasterRulesRejectInvalidInput()
+    {
+        TypedFormRequestFactory::withCasters([
+            MyCollection::class => MyCollectionCaster::class,
+        ]);
+
+        try {
+            $request = Request::create('', parameters: [
+                'items' => 'not-an-array',
+            ]);
+            $this->app->instance('request', $request);
+
+            $this->app->make(CasterCollectionRequest::class);
+            self::fail('No exception thrown!');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('items', $e->errors());
+        } finally {
+            TypedFormRequestFactory::withCasters([], merge: false);
+        }
+    }
+
+    public function testCustomCasterWithSiblingFieldRules()
+    {
+        TypedFormRequestFactory::withCasters([
+            MyCollection::class => MyCollectionCasterWithSiblingRules::class,
+        ]);
+
+        try {
+            // items is valid but items_mode is missing
+            $request = Request::create('', parameters: [
+                'items' => ['a', 'b'],
+            ]);
+            $this->app->instance('request', $request);
+
+            $this->app->make(CasterCollectionRequest::class);
+            self::fail('No exception thrown!');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('items_mode', $e->errors());
+        } finally {
+            TypedFormRequestFactory::withCasters([], merge: false);
+        }
+    }
 }
 
 class MyTypedForm extends TypedFormRequest
@@ -2177,6 +2250,51 @@ class RedirectToRouteRequest extends TypedFormRequest
 {
     public function __construct(
         public string $name,
+    ) {
+    }
+}
+
+class MyCollection
+{
+    public function __construct(
+        public array $all,
+    ) {
+    }
+}
+
+class MyCollectionCaster implements TypedRequestCaster
+{
+    public function rules(string $param): string|array|null
+    {
+        return 'array';
+    }
+
+    public function cast(string $param, mixed $value, string $type, Request $request): mixed
+    {
+        return new MyCollection($value);
+    }
+}
+
+class MyCollectionCasterWithSiblingRules implements TypedRequestCaster
+{
+    public function rules(string $param): string|array|null
+    {
+        return [
+            $param => 'array',
+            "{$param}_mode" => 'required|string',
+        ];
+    }
+
+    public function cast(string $param, mixed $value, string $type, Request $request): mixed
+    {
+        return new MyCollection($value);
+    }
+}
+
+class CasterCollectionRequest extends TypedFormRequest
+{
+    public function __construct(
+        public MyCollection $items,
     ) {
     }
 }

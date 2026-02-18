@@ -20,7 +20,7 @@ trait HandlesCasters
     /**
      * @param  array<string, class-string<TypedRequestCaster>|TypedRequestCaster>  $casters
      */
-    public static function setCasters(array $casters, bool $merge = true): void
+    public static function withCasters(array $casters, bool $merge = true): void
     {
         static::$casters = $merge ? array_merge(static::$casters, $casters) : $casters;
     }

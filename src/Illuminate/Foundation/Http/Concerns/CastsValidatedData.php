@@ -77,6 +77,13 @@ trait CastsValidatedData
             }
 
             $typeName = $type->getName();
+
+            if ($caster = $this->hasCaster($type)) {
+                $arguments[$name] = $caster->cast($fieldName, $value, $typeName, $this->request);
+
+                continue;
+            }
+
             if ($type->isBuiltin()) {
                 if ($typeName === 'object') {
                     $arguments[$name] = $this->castBuiltinObjectValue($value);
