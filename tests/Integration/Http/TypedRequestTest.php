@@ -1563,7 +1563,7 @@ class TypedRequestTest extends TestCase
     {
         $this->app['router']->get('/dashboard', fn () => 'ok')->name('dashboard');
 
-        $request = Request::create('', parameters: []);
+        $request = Request::create('');
         $this->app->instance('request', $request);
 
         try {
@@ -1576,7 +1576,7 @@ class TypedRequestTest extends TestCase
 
     public function testNoRedirectAttributeMeansNullRedirectOnValidationException()
     {
-        $request = Request::create('', parameters: []);
+        $request = Request::create('');
         $this->app->instance('request', $request);
 
         try {
