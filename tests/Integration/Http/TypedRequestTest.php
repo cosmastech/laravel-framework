@@ -1593,20 +1593,16 @@ class TypedRequestTest extends TestCase
             MyCollection::class => MyCollectionCaster::class,
         ]);
 
-        try {
-            $request = Request::create('', parameters: [
-                'items' => ['a', 'b', 'c'],
-            ]);
-            $this->app->instance('request', $request);
+        $request = Request::create('', parameters: [
+            'items' => ['a', 'b', 'c'],
+        ]);
+        $this->app->instance('request', $request);
 
-            $actual = $this->app->make(CasterCollectionRequest::class);
+        $actual = $this->app->make(CasterCollectionRequest::class);
 
-            $this->assertInstanceOf(CasterCollectionRequest::class, $actual);
-            $this->assertInstanceOf(MyCollection::class, $actual->items);
-            $this->assertSame(['a', 'b', 'c'], $actual->items->all);
-        } finally {
-            TypedFormRequestFactory::withCasters([], merge: false);
-        }
+        $this->assertInstanceOf(CasterCollectionRequest::class, $actual);
+        $this->assertInstanceOf(MyCollection::class, $actual->items);
+        $this->assertSame(['a', 'b', 'c'], $actual->items->all);
     }
 
     public function testCustomCasterRulesRejectInvalidInput()
@@ -1625,8 +1621,6 @@ class TypedRequestTest extends TestCase
             self::fail('No exception thrown!');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('items', $e->errors());
-        } finally {
-            TypedFormRequestFactory::withCasters([], merge: false);
         }
     }
 
@@ -1647,9 +1641,26 @@ class TypedRequestTest extends TestCase
             self::fail('No exception thrown!');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('items_mode', $e->errors());
-        } finally {
-            TypedFormRequestFactory::withCasters([], merge: false);
         }
+    }
+
+    public function testCustomCasterWithSiblingFieldRulesPassesWhenSiblingIsPresent()
+    {
+        TypedFormRequestFactory::withCasters([
+            MyCollection::class => MyCollectionCasterWithSiblingRules::class,
+        ]);
+
+        $request = Request::create('', parameters: [
+            'items' => ['a', 'b'],
+            'items_mode' => 'append',
+        ]);
+        $this->app->instance('request', $request);
+
+        $actual = $this->app->make(CasterCollectionRequest::class);
+
+        $this->assertInstanceOf(CasterCollectionRequest::class, $actual);
+        $this->assertInstanceOf(MyCollection::class, $actual->items);
+        $this->assertSame(['a', 'b'], $actual->items->all);
     }
 }
 
