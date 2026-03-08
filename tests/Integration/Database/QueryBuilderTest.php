@@ -687,6 +687,54 @@ class QueryBuilderTest extends DatabaseTestCase
         $this->assertSame('Bar Post', $result2[1]->title);
     }
 
+    public function testInsertUsingWithDefaults()
+    {
+        Schema::create('post_copies', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('title');
+            $table->string('status');
+            $table->timestamp('created_at');
+        });
+
+        DB::table('post_copies')->insertUsing(
+            ['title', 'status', 'created_at'],
+            DB::table('posts')->select(['title', 'created_at']),
+            ['status' => 'archived']
+        );
+
+        $copies = DB::table('post_copies')->orderBy('id')->get();
+
+        $this->assertCount(2, $copies);
+        $this->assertSame('Foo Post', $copies[0]->title);
+        $this->assertSame('archived', $copies[0]->status);
+        $this->assertSame('Bar Post', $copies[1]->title);
+        $this->assertSame('archived', $copies[1]->status);
+    }
+
+    public function testInsertUsingWithDefaultsAndExpression()
+    {
+        Schema::create('post_copies', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('title');
+            $table->string('status');
+            $table->integer('priority');
+        });
+
+        DB::table('post_copies')->insertUsing(
+            ['title', 'status', 'priority'],
+            DB::table('posts')->select(['title']),
+            ['status' => 'active', 'priority' => DB::raw('1 + 3')]
+        );
+
+        $copies = DB::table('post_copies')->orderBy('id')->get();
+
+        $this->assertCount(2, $copies);
+        $this->assertSame('active', $copies[0]->status);
+        $this->assertEquals(4, $copies[0]->priority);
+        $this->assertSame('active', $copies[1]->status);
+        $this->assertEquals(4, $copies[1]->priority);
+    }
+
     protected function defineEnvironmentWouldThrowsPDOException($app)
     {
         $this->afterApplicationCreated(function () {
