@@ -3964,6 +3964,101 @@ class DatabaseQueryBuilderTest extends TestCase
         $builder->from('table1')->insertUsing(['foo'], ['bar']);
     }
 
+    public function testInsertUsingWithDefaults()
+    {
+        $builder = $this->getBuilder();
+        $builder->getConnection()->shouldReceive('affectingStatement')->once()->with(
+            'insert into "table1" ("foo", "status", "reason") select "bar", ?, ? from "table2" where "foreign_id" = ?',
+            ['active', 'created', 5]
+        )->andReturn(1);
+
+        $result = $builder->from('table1')->insertUsing(
+            ['foo', 'status', 'reason'],
+            function (Builder $query) {
+                $query->select(['bar'])->from('table2')->where('foreign_id', '=', 5);
+            },
+            ['status' => 'active', 'reason' => 'created']
+        );
+
+        $this->assertEquals(1, $result);
+    }
+
+    public function testInsertUsingWithDefaultsReordersColumns()
+    {
+        $builder = $this->getBuilder();
+        $builder->getConnection()->shouldReceive('affectingStatement')->once()->with(
+            'insert into "table1" ("foo", "baz", "status") select "bar", "qux", ? from "table2"',
+            ['active']
+        )->andReturn(1);
+
+        $result = $builder->from('table1')->insertUsing(
+            ['foo', 'status', 'baz'],
+            function (Builder $query) {
+                $query->select(['bar', 'qux'])->from('table2');
+            },
+            ['status' => 'active']
+        );
+
+        $this->assertEquals(1, $result);
+    }
+
+    public function testInsertUsingWithDefaultsAndExpression()
+    {
+        $builder = $this->getBuilder();
+        $builder->getConnection()->shouldReceive('affectingStatement')->once()->with(
+            'insert into "table1" ("foo", "created_at") select "bar", NOW() from "table2"',
+            []
+        )->andReturn(1);
+
+        $result = $builder->from('table1')->insertUsing(
+            ['foo', 'created_at'],
+            function (Builder $query) {
+                $query->select(['bar'])->from('table2');
+            },
+            ['created_at' => new Raw('NOW()')]
+        );
+
+        $this->assertEquals(1, $result);
+    }
+
+    public function testInsertUsingWithDefaultsAndEnum()
+    {
+        $builder = $this->getBuilder();
+        $builder->getConnection()->shouldReceive('affectingStatement')->once()->with(
+            'insert into "table1" ("foo", "status") select "bar", ? from "table2"',
+            [5]
+        )->andReturn(1);
+
+        $result = $builder->from('table1')->insertUsing(
+            ['foo', 'status'],
+            function (Builder $query) {
+                $query->select(['bar'])->from('table2');
+            },
+            ['status' => Bar::FOO]
+        );
+
+        $this->assertEquals(1, $result);
+    }
+
+    public function testInsertUsingWithDefaultsAndSubqueryBuilder()
+    {
+        $builder = $this->getBuilder();
+        $builder->getConnection()->shouldReceive('affectingStatement')->once()->with(
+            'insert into "table1" ("foo", "status") select "bar", ? from "table2" where "foreign_id" = ?',
+            ['active', 5]
+        )->andReturn(1);
+
+        $subquery = $this->getBuilder()->select(['bar'])->from('table2')->where('foreign_id', '=', 5);
+
+        $result = $builder->from('table1')->insertUsing(
+            ['foo', 'status'],
+            $subquery,
+            ['status' => 'active']
+        );
+
+        $this->assertEquals(1, $result);
+    }
+
     public function testInsertOrIgnoreMethod()
     {
         $this->expectException(RuntimeException::class);
@@ -4186,6 +4281,26 @@ class DatabaseQueryBuilderTest extends TestCase
             function (Builder $query) {
                 $query->select(['bar'])->from('table2')->where('foreign_id', '=', 5);
             }
+        );
+
+        $this->assertEquals(1, $result);
+    }
+
+    public function testMySqlInsertOrIgnoreUsingWithDefaults()
+    {
+        $builder = $this->getMySqlBuilder();
+        $builder->getConnection()->shouldReceive('getDatabaseName');
+        $builder->getConnection()->shouldReceive('affectingStatement')->once()->with(
+            'insert ignore into `table1` (`foo`, `status`) select `bar`, ? from `table2` where `foreign_id` = ?',
+            ['active', 5]
+        )->andReturn(1);
+
+        $result = $builder->from('table1')->insertOrIgnoreUsing(
+            ['foo', 'status'],
+            function (Builder $query) {
+                $query->select(['bar'])->from('table2')->where('foreign_id', '=', 5);
+            },
+            ['status' => 'active']
         );
 
         $this->assertEquals(1, $result);

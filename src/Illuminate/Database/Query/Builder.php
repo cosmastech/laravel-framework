@@ -4185,9 +4185,13 @@ class Builder implements BuilderContract
      * @param  \Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder<*>|string  $query
      * @return int
      */
-    public function insertUsing(array $columns, $query)
+    public function insertUsing(array $columns, $query, array $defaults = [])
     {
         $this->applyBeforeQueryCallbacks();
+
+        if (! empty($defaults)) {
+            [$columns, $query] = $this->applyInsertUsingDefaults($columns, $query, $defaults);
+        }
 
         [$sql, $bindings] = $this->createSub($query);
 
@@ -4203,9 +4207,13 @@ class Builder implements BuilderContract
      * @param  \Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder<*>|string  $query
      * @return int
      */
-    public function insertOrIgnoreUsing(array $columns, $query)
+    public function insertOrIgnoreUsing(array $columns, $query, array $defaults = [])
     {
         $this->applyBeforeQueryCallbacks();
+
+        if (! empty($defaults)) {
+            [$columns, $query] = $this->applyInsertUsingDefaults($columns, $query, $defaults);
+        }
 
         [$sql, $bindings] = $this->createSub($query);
 
@@ -4213,6 +4221,46 @@ class Builder implements BuilderContract
             $this->grammar->compileInsertOrIgnoreUsing($this, $columns, $sql),
             $this->cleanBindings($bindings)
         );
+    }
+
+    /**
+     * Apply default values to an insert-using subquery.
+     *
+     * @param  array  $columns
+     * @param  \Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder<*>|string  $query
+     * @param  array  $defaults
+     * @return array
+     */
+    private function applyInsertUsingDefaults(array $columns, $query, array $defaults)
+    {
+        if ($query instanceof Closure) {
+            $callback = $query;
+
+            $callback($query = $this->forSubQuery());
+        }
+
+        $subqueryCols = [];
+        $defaultCols = [];
+
+        foreach ($columns as $col) {
+            if (array_key_exists($col, $defaults)) {
+                $defaultCols[] = $col;
+            } else {
+                $subqueryCols[] = $col;
+            }
+        }
+
+        foreach ($defaultCols as $col) {
+            $value = $defaults[$col];
+
+            if ($value instanceof ExpressionContract) {
+                $query->selectRaw($this->grammar->getValue($value));
+            } else {
+                $query->selectRaw('?', [$value]);
+            }
+        }
+
+        return [array_merge($subqueryCols, $defaultCols), $query];
     }
 
     /**
