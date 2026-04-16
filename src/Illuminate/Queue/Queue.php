@@ -125,6 +125,7 @@ abstract class Queue
             $job = CallQueuedClosure::create($job);
         }
 
+        // this is where we encode the payload with the delay
         $value = $this->createPayloadArray($job, $queue, $data);
 
         $value['delay'] = isset($delay)
@@ -361,7 +362,7 @@ abstract class Queue
      * @return mixed
      */
     protected function enqueueUsing($job, $payload, $queue, $delay, $callback)
-    {
+    {// this is where it sets the day
         if ($this->shouldDispatchAfterCommit($job) &&
             $this->container->bound('db.transactions')) {
             if ($job instanceof ShouldBeUnique) {
