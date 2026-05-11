@@ -7,6 +7,7 @@ use Illuminate\Bus\ExecutionContext\ExecutionStepResult;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 use Orchestra\Testbench\TestCase;
 
@@ -24,13 +25,27 @@ class ExecutionStateSerializationTest extends TestCase
         });
     }
 
+    public function testStateRestoresStepCompletedAtAsCarbon()
+    {
+        $completedAt = Carbon::parse('2026-05-11 17:12:00', 'America/New_York');
+        $state = new ExecutionState('execution-1');
+        $state->recordStepResult(new ExecutionStepResult('fetch-user', $completedAt, 'result'));
+
+        $restoredState = unserialize(serialize($state));
+        $restoredStep = $restoredState->all()['fetch-user'];
+
+        $this->assertInstanceOf(Carbon::class, $restoredStep->completedAt);
+        $this->assertTrue($restoredStep->completedAt->equalTo($completedAt));
+        $this->assertSame('America/New_York', $restoredStep->completedAt->getTimezone()->getName());
+    }
+
     public function testStateRestoresModelStepResultsFromTheDatabase()
     {
         $user = ExecutionStateSerializationTestUser::create([
             'email' => 'before@example.com',
         ]);
         $state = new ExecutionState('execution-1');
-        $state->recordStepResult(new ExecutionStepResult('execution-1', 'fetch-user', 123, $user));
+        $state->recordStepResult(new ExecutionStepResult('fetch-user', Carbon::createFromTimestamp(123), $user));
 
         $serialized = serialize($state);
         $user->update(['email' => 'after@example.com']);
@@ -49,7 +64,7 @@ class ExecutionStateSerializationTest extends TestCase
             'email' => 'before@example.com',
         ]);
         $state = new ExecutionState('execution-1');
-        $state->recordStepResult(new ExecutionStepResult('execution-1', 'fetch-user', 123, ['user' => $user]));
+        $state->recordStepResult(new ExecutionStepResult('fetch-user', Carbon::createFromTimestamp(123), ['user' => $user]));
 
         $serialized = serialize($state);
         $user->update(['email' => 'after@example.com']);
@@ -71,7 +86,7 @@ class ExecutionStateSerializationTest extends TestCase
             'email' => 'second-before@example.com',
         ]);
         $state = new ExecutionState('execution-1');
-        $state->recordStepResult(new ExecutionStepResult('execution-1', 'fetch-users', 123, ExecutionStateSerializationTestUser::all()));
+        $state->recordStepResult(new ExecutionStepResult('fetch-users', Carbon::createFromTimestamp(123), ExecutionStateSerializationTestUser::all()));
 
         $serialized = serialize($state);
         $firstUser->update(['email' => 'first-after@example.com']);

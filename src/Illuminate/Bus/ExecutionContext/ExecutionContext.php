@@ -74,7 +74,7 @@ class ExecutionContext
             throw $e;
         }
 
-        $stepResult = new ExecutionStepResult($this->state->id(), $name, Carbon::now()->getTimestamp(), $result);
+        $stepResult = new ExecutionStepResult($name, Carbon::now(), $result);
 
         $this->state->recordStepResult($stepResult);
         $this->executionRepository->saveStep($this->state, $stepResult, $this->normalizeStepOptions($options, $stepResult));

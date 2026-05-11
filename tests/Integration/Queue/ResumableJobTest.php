@@ -130,7 +130,7 @@ class ResumableJobTest extends QueueTestCase
             'update_database' => $now,
             'send_email' => $now,
         ], (new Collection(['get_data', 'update_database', 'send_email']))->mapWithKeys(function ($step) use ($uuid) {
-            return [$step => $this->cachedStepResult($uuid, $step)->completedAt];
+            return [$step => $this->cachedStepResult($uuid, $step)->completedAt->getTimestamp()];
         })->all()
         );
     }
@@ -203,7 +203,7 @@ class ResumableJobTest extends QueueTestCase
             'options' => ['ttl' => null],
         ]);
         Cache::put('execution:return-1234:steps', ['get_data']);
-        Cache::put('execution:return-1234:step:get_data', new ExecutionStepResult('return-1234', 'get_data', 1, [
+        Cache::put('execution:return-1234:step:get_data', new ExecutionStepResult('get_data', Carbon::createFromTimestamp(1), [
             'data' => [
                 [
                     'id' => 9876,
@@ -237,7 +237,7 @@ class ResumableJobTest extends QueueTestCase
         Mail::fake();
         Event::fake();
         $state = new ExecutionState('return-1234');
-        $state->recordStepResult(new ExecutionStepResult('return-1234', 'get_data', 1, [
+        $state->recordStepResult(new ExecutionStepResult('get_data', Carbon::createFromTimestamp(1), [
             'data' => [
                 [
                     'id' => 9876,
