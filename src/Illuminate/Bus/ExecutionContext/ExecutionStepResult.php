@@ -3,6 +3,7 @@
 namespace Illuminate\Bus\ExecutionContext;
 
 use Illuminate\Queue\SerializesAndRestoresModelIdentifiers;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class ExecutionStepResult
@@ -10,9 +11,8 @@ class ExecutionStepResult
     use SerializesAndRestoresModelIdentifiers;
 
     public function __construct(
-        public mixed $id,
         public string $name,
-        public int $completedAt,
+        public Carbon $completedAt,
         public mixed $result,
     ) {
     }
@@ -20,7 +20,6 @@ class ExecutionStepResult
     public function __serialize(): array
     {
         return [
-            'id' => $this->serializeValue($this->id),
             'name' => $this->name,
             'completedAt' => $this->completedAt,
             'result' => $this->serializeValue($this->result),
@@ -29,7 +28,6 @@ class ExecutionStepResult
 
     public function __unserialize(array $values): void
     {
-        $this->id = $this->restoreValue($values['id']);
         $this->name = $values['name'];
         $this->completedAt = $values['completedAt'];
         $this->result = $this->restoreValue($values['result']);

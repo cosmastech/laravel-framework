@@ -50,12 +50,13 @@ class ExecutionContextTest extends TestCase
             return $event->state === $state
                 && $event->step === 'fetch-products'
                 && $event->result->result === ['product-1', 'product-2']
-                && $event->result->completedAt === $now->getTimestamp();
+                && $event->result->completedAt->equalTo($now);
         });
         $this->assertSame($state, $repository->savedSteps[0]['state']);
         $this->assertSame('fetch-products', $repository->savedSteps[0]['stepResult']->name);
         $this->assertSame(['product-1', 'product-2'], $repository->savedSteps[0]['stepResult']->result);
-        $this->assertSame($now->getTimestamp(), $repository->savedSteps[0]['stepResult']->completedAt);
+        $this->assertInstanceOf(Carbon::class, $repository->savedSteps[0]['stepResult']->completedAt);
+        $this->assertTrue($repository->savedSteps[0]['stepResult']->completedAt->equalTo($now));
         $this->assertSame([], $repository->savedSteps[0]['options']);
     }
 
@@ -213,7 +214,7 @@ class ExecutionContextTest extends TestCase
     {
         $events = $this->fakeEvents();
         $state = new ExecutionState('execution-1');
-        $state->recordStepResult(new ExecutionStepResult('execution-1', 'fetch-products', 123, 'stored-result'));
+        $state->recordStepResult(new ExecutionStepResult('fetch-products', Carbon::createFromTimestamp(123), 'stored-result'));
         $repository = new ExecutionContextRecordingExecutionRepository($state);
         $context = new ExecutionContext($repository, $events, 'execution-1');
         $runs = 0;
@@ -267,9 +268,9 @@ class ExecutionContextTest extends TestCase
         $this->assertInstanceOf(ExecutionState::class, $stored);
         $this->assertSame('execution-1', $stored->id());
         $this->assertInstanceOf(ExecutionStepResult::class, $storedStep);
-        $this->assertSame('execution-1', $storedStep->id);
         $this->assertSame('fetch-products', $storedStep->name);
-        $this->assertSame($now->getTimestamp(), $storedStep->completedAt);
+        $this->assertInstanceOf(Carbon::class, $storedStep->completedAt);
+        $this->assertTrue($storedStep->completedAt->equalTo($now));
         $this->assertSame('new-result', $storedStep->result);
     }
 
