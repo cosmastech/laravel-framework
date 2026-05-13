@@ -630,6 +630,8 @@ class Repository
     }
 
     /**
+     * Indicate which keys should not be serialized when dispatching a job or queued event.
+     *
      * @param  array<int, string>|'all'  $keys
      * @param  bool  $replace
      * @return void
@@ -649,6 +651,16 @@ class Repository
     }
 
     /**
+     * Get the keys which should not be serialized.
+     *
+     * @return array<int, string>|'all'
+     */
+    public function isNotSerializing()
+    {
+        return $this->hidden['laravel_without_serializing'] ?? [];
+    }
+
+    /**
      * Dehydrate the context data.
      *
      * @internal
@@ -665,7 +677,7 @@ class Repository
 
         $serialize = fn ($value) => serialize($instance->getSerializedPropertyValue($value, withRelations: false));
 
-        $without = $instance->getHidden('laravel_without_serializing', []);
+        $without = $instance->isNotSerializing();
         if ($without === 'all') {
             $instance->data = [];
         }

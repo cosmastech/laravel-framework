@@ -10,6 +10,7 @@ use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Queue\PreparesForDispatch;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Foundation\Queue\InteractsWithUniqueJobs;
+use Illuminate\Log\Context\Repository;
 use Illuminate\Queue\Attributes\DebounceFor;
 use Illuminate\Queue\Attributes\ReadsQueueAttributes;
 use Illuminate\Support\Traits\Conditionable;
@@ -32,6 +33,11 @@ class PendingDispatch
      * @var bool
      */
     protected $afterResponse = false;
+
+    /**
+     * @var array<int, string>|'all'
+     */
+    protected $withoutSerializing = [];
 
     /**
      * Create a new pending job dispatch.
@@ -201,6 +207,25 @@ class PendingDispatch
     }
 
     /**
+     * Specify which keys from Context should not be serialized when dispatching the job.
+     *
+     * @param  string  ...$keys
+     * @return $this
+     */
+    public function withoutSerializingContext(...$keys)
+    {
+        if ($keys === []) {
+            $this->withoutSerializing = 'all';
+
+            return $this;
+        }
+
+        $this->withoutSerializing = is_array($keys[0]) ? $keys[0] : $keys;
+
+        return $this;
+    }
+
+    /**
      * Determine if the job should be dispatched.
      *
      * @return bool
@@ -292,10 +317,25 @@ class PendingDispatch
 
         $this->acquireDebounceLock();
 
-        if ($this->afterResponse) {
-            app(Dispatcher::class)->dispatchAfterResponse($this->job);
-        } else {
-            app(Dispatcher::class)->dispatch($this->job);
+        $repository = $originalWithoutSerializing = null;
+        if ($this->withoutSerializing !== []) {
+            $repository = Container::getInstance()->bound(Repository::class)
+                ? Container::getInstance()->make(Repository::class)
+                : null;
+            $originalWithoutSerializing = $repository->isNotSerializing();
+            $repository->withoutSerializing($this->withoutSerializing);
+        }
+
+        try {
+            if ($this->afterResponse) {
+                app(Dispatcher::class)->dispatchAfterResponse($this->job);
+            } else {
+                app(Dispatcher::class)->dispatch($this->job);
+            }
+        } finally {
+            if ($repository && $this->withoutSerializing !== []) {
+                $repository->withoutSerializing($originalWithoutSerializing);
+            }
         }
 
         $this->removeUniqueJobInformationFromContext($this->job);
