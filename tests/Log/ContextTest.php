@@ -178,6 +178,115 @@ class ContextTest extends TestCase
         $this->assertSame(55, Context::getHidden('number'));
     }
 
+    public function test_it_can_exclude_keys_from_dehydrated_payload()
+    {
+        Context::add('included', 'yes');
+        Context::add('excluded', 'no');
+        Context::withoutSerializing(['excluded']);
+
+        $dehydrated = Context::dehydrate();
+
+        $this->assertArrayHasKey('included', $dehydrated['data']);
+        $this->assertArrayNotHasKey('excluded', $dehydrated['data']);
+
+        Context::flush();
+        Context::hydrate($dehydrated);
+
+        $this->assertSame('yes', Context::get('included'));
+        $this->assertNull(Context::get('excluded'));
+    }
+
+    public function test_without_serializing_false_merges_key_lists()
+    {
+        Context::add('a', 1);
+        Context::add('b', 2);
+        Context::add('c', 3);
+        Context::withoutSerializing(['a'], true);
+        Context::withoutSerializing(['b'], false);
+
+        $dehydrated = Context::dehydrate();
+
+        $this->assertArrayNotHasKey('a', $dehydrated['data']);
+        $this->assertArrayNotHasKey('b', $dehydrated['data']);
+        $this->assertArrayHasKey('c', $dehydrated['data']);
+    }
+
+    public function test_without_serializing_replace_overwrites_previous_list()
+    {
+        Context::add('a', 1);
+        Context::add('b', 2);
+        Context::withoutSerializing(['a'], true);
+        Context::withoutSerializing(['b'], true);
+
+        $dehydrated = Context::dehydrate();
+
+        $this->assertArrayHasKey('a', $dehydrated['data']);
+        $this->assertArrayNotHasKey('b', $dehydrated['data']);
+    }
+
+    public function test_without_serializing_only_affects_public_context_data()
+    {
+        Context::add('secret', 'public-value');
+        Context::addHidden('secret', 'hidden-value');
+        Context::withoutSerializing(['secret']);
+
+        $dehydrated = Context::dehydrate();
+
+        $this->assertArrayNotHasKey('secret', $dehydrated['data']);
+        $this->assertArrayHasKey('secret', $dehydrated['hidden']);
+    }
+
+    public function test_internal_without_serializing_key_is_not_restored_on_hydrate()
+    {
+        Context::add('foo', 1);
+        Context::withoutSerializing(['foo']);
+
+        Context::hydrate(Context::dehydrate());
+
+        $this->assertFalse(Context::hasHidden('laravel_without_serializing'));
+    }
+
+    public function test_without_serializing_all_omits_entire_public_context_from_dehydrated_payload()
+    {
+        Context::add('foo', 1);
+        Context::add('bar', 2);
+        Context::addHidden('baz', 3);
+        Context::withoutSerializing('all');
+
+        $dehydrated = Context::dehydrate();
+
+        $this->assertSame([], $dehydrated['data']);
+        $this->assertArrayHasKey('baz', $dehydrated['hidden']);
+    }
+
+    public function test_without_serializing_all_round_trip_restores_only_hidden_context()
+    {
+        Context::add('foo', 1);
+        Context::addHidden('baz', 3);
+        Context::withoutSerializing('all');
+
+        $dehydrated = Context::dehydrate();
+
+        Context::flush();
+        Context::hydrate($dehydrated);
+
+        $this->assertSame([], Context::all());
+        $this->assertSame(3, Context::getHidden('baz'));
+        $this->assertFalse(Context::has('foo'));
+    }
+
+    public function test_without_serializing_all_replaces_previous_key_list()
+    {
+        Context::add('a', 1);
+        Context::add('b', 2);
+        Context::withoutSerializing(['a'], true);
+        Context::withoutSerializing('all');
+
+        $dehydrated = Context::dehydrate();
+
+        $this->assertSame([], $dehydrated['data']);
+    }
+
     public function test_it_can_push_to_list()
     {
         Context::push('breadcrumbs', 'foo');

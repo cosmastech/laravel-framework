@@ -630,6 +630,25 @@ class Repository
     }
 
     /**
+     * @param  array<int, string>|'all'  $keys
+     * @param  bool  $replace
+     * @return void
+     */
+    public function withoutSerializing($keys, bool $replace = true)
+    {
+        if ($keys === 'all') {
+            $this->hidden['laravel_without_serializing'] = 'all';
+
+            return;
+        }
+
+        $this->hidden['laravel_without_serializing'] = $replace ? $keys : [
+            ...($this->hidden['laravel_without_serializing'] ?? []),
+            ...$keys,
+        ];
+    }
+
+    /**
      * Dehydrate the context data.
      *
      * @internal
@@ -646,9 +665,18 @@ class Repository
 
         $serialize = fn ($value) => serialize($instance->getSerializedPropertyValue($value, withRelations: false));
 
+        $without = $instance->getHidden('laravel_without_serializing', []);
+        if ($without === 'all') {
+            $instance->data = [];
+        }
+
+        $data = $without === 'all'
+            ? []
+            : $instance->except($without);
+
         return $instance->isEmpty() ? null : [
-            'data' => array_map($serialize, $instance->all()),
-            'hidden' => array_map($serialize, $instance->allHidden()),
+            'data' => array_map($serialize, $data),
+            'hidden' => array_map($serialize, $instance->exceptHidden(['laravel_without_serializing'])),
         ];
     }
 
