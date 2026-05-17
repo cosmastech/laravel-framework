@@ -4,6 +4,7 @@ namespace Illuminate\Tests\Workflows\Fixtures;
 
 use Illuminate\Tests\Workflows\Attributes\Step;
 use Illuminate\Tests\Workflows\Attributes\Workflow;
+use Illuminate\Tests\Workflows\Stubs\AsWorkflow;
 use Illuminate\Tests\Workflows\Stubs\WorkflowContext;
 
 /**
@@ -17,6 +18,8 @@ use Illuminate\Tests\Workflows\Stubs\WorkflowContext;
 )]
 final class ThirdPartyReturnWorkflow
 {
+    use AsWorkflow;
+
     public function __construct(
         private readonly ReturnLookup $returns,
     ) {
