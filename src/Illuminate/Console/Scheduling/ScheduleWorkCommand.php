@@ -4,6 +4,8 @@ namespace Illuminate\Console\Scheduling;
 
 use Illuminate\Console\Application;
 use Illuminate\Console\Command;
+use Illuminate\Console\Events\ScheduleWorkLooping;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\ProcessUtils;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -32,9 +34,10 @@ class ScheduleWorkCommand extends Command
     /**
      * Execute the console command.
      *
+     * @param  \Illuminate\Contracts\Events\Dispatcher  $dispatcher
      * @return never
      */
-    public function handle()
+    public function handle(Dispatcher $dispatcher)
     {
         $this->components->info(
             'Running scheduled tasks.',
@@ -56,25 +59,45 @@ class ScheduleWorkCommand extends Command
         while (true) {
             usleep(100 * 1000);
 
-            if (Carbon::now()->second === 0 &&
-                ! Carbon::now()->startOfMinute()->equalTo($lastExecutionStartedAt)) {
-                $executions[] = $execution = Process::fromShellCommandline($command, base_path());
+            $lastExecutionStartedAt = $this->runLoopIteration($dispatcher, $command, $lastExecutionStartedAt, $executions);
+        }
+    }
 
-                $execution->start();
+    /**
+     * Run a single schedule worker loop iteration.
+     *
+     * @param  \Illuminate\Contracts\Events\Dispatcher  $dispatcher
+     * @param  string  $command
+     * @param  \Illuminate\Support\Carbon  $lastExecutionStartedAt
+     * @param  array<int, \Symfony\Component\Process\Process>  $executions
+     * @return \Illuminate\Support\Carbon
+     */
+    protected function runLoopIteration(Dispatcher $dispatcher, $command, Carbon $lastExecutionStartedAt, array &$executions)
+    {
+        if ($dispatcher->until(new ScheduleWorkLooping) === false) {
+            return $lastExecutionStartedAt;
+        }
 
-                $lastExecutionStartedAt = Carbon::now()->startOfMinute();
-            }
+        if (Carbon::now()->second === 0 &&
+            ! Carbon::now()->startOfMinute()->equalTo($lastExecutionStartedAt)) {
+            $executions[] = $execution = Process::fromShellCommandline($command, base_path());
 
-            foreach ($executions as $key => $execution) {
-                $output = $execution->getIncrementalOutput().
-                    $execution->getIncrementalErrorOutput();
+            $execution->start();
 
-                $this->output->write(ltrim($output, "\n"));
+            $lastExecutionStartedAt = Carbon::now()->startOfMinute();
+        }
 
-                if (! $execution->isRunning()) {
-                    unset($executions[$key]);
-                }
+        foreach ($executions as $key => $execution) {
+            $output = $execution->getIncrementalOutput().
+                $execution->getIncrementalErrorOutput();
+
+            $this->output->write(ltrim($output, "\n"));
+
+            if (! $execution->isRunning()) {
+                unset($executions[$key]);
             }
         }
+
+        return $lastExecutionStartedAt;
     }
 }
