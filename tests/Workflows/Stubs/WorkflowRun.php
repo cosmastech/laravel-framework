@@ -28,7 +28,6 @@ final class WorkflowRun
 
     public function blocked(): bool
     {
-        return $this->status === WorkflowStatus::Waiting
-            || $this->status === WorkflowStatus::Pending;
+        return $this->status === WorkflowStatus::Waiting;
     }
 }

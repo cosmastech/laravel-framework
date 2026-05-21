@@ -13,7 +13,7 @@ use Illuminate\Tests\Workflows\Stubs\WorkflowContext;
  */
 #[Workflow(
     name: 'third-party-return',
-    defaultTries: 2,
+    tries: 2,
     options: ['connection' => 'workflow-db'],
 )]
 final class ThirdPartyReturnWorkflow
@@ -21,7 +21,7 @@ final class ThirdPartyReturnWorkflow
     use AsWorkflow;
 
     public function __construct(
-        private readonly ReturnLookup $returns,
+        public readonly ReturnLookup $returns,
     ) {
     }
 
@@ -53,7 +53,7 @@ final class ThirdPartyReturnWorkflow
     }
 
     /**
-     * No {@see Step::$tries}: inherits {@see Workflow::$defaultTries} / framework default.
+     * No {@see Step::$tries}: inherits {@see Workflow::$tries} / framework default.
      */
     #[Step(name: 'validate-return')]
     private function validateReturn(array $return): true

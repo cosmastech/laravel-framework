@@ -5,7 +5,7 @@ namespace Illuminate\Tests\Workflows;
 use Closure;
 use DateInterval;
 use DateTimeInterface;
-use InvalidArgumentException;
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Database\ModelIdentifier;
 use Illuminate\Support\Stringable;
 use Illuminate\Tests\Workflows\Attributes\Step;
@@ -20,6 +20,7 @@ use Illuminate\Tests\Workflows\Stubs\WorkflowRun;
 use Illuminate\Tests\Workflows\Stubs\WorkflowRunId;
 use Illuminate\Tests\Workflows\Stubs\WorkflowStatus;
 use Illuminate\Tests\Workflows\Stubs\WorkflowWakeResult;
+use InvalidArgumentException;
 use Override;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -27,6 +28,12 @@ use ReflectionClass;
 
 class WorkflowShapeTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        Container::setInstance();
+    }
+
     #[Test]
     public function workflow_entry_class_carries_workflow_attribute(): void
     {
@@ -37,23 +44,22 @@ class WorkflowShapeTest extends TestCase
 
         $workflow = $attributes[0]->newInstance();
         $this->assertSame('third-party-return', $workflow->name);
-        $this->assertSame(2, $workflow->defaultTries);
+        $this->assertSame(2, $workflow->tries);
         $this->assertSame(['connection' => 'workflow-db'], $workflow->options);
     }
 
     #[Test]
-    public function workflow_class_supports_container_constructor_dependencies(): void
+    public function workflow_class_can_be_resolved_from_the_container(): void
     {
-        $reflection = new ReflectionClass(ThirdPartyReturnWorkflow::class);
-        $constructor = $reflection->getConstructor();
-        $this->assertNotNull($constructor);
+        Container::getInstance()->instance(
+            ReturnLookup::class,
+            $concrete = new class extends ReturnLookup
+            {
+            }
+        );
+        $workflow = Container::getInstance()->make(ThirdPartyReturnWorkflow::class);
 
-        $params = $constructor->getParameters();
-        $this->assertCount(1, $params);
-        $this->assertSame('returns', $params[0]->getName());
-        $type = $params[0]->getType();
-        $this->assertNotNull($type);
-        $this->assertSame(ReturnLookup::class, $type->getName());
+        $this->assertSame($concrete, $workflow->returns);
     }
 
     #[Test]
@@ -121,7 +127,7 @@ class WorkflowShapeTest extends TestCase
             }
         };
 
-        $result = (new ThirdPartyReturnWorkflow(new ReturnLookup))->handle($context, 'ret_123');
+        $result = (new Container)->make(ThirdPartyReturnWorkflow::class)->handle($context, 'ret_123');
 
         $this->assertSame([
             ['stepWithOptions', ['ret_123'], ['tries' => 7]],
@@ -163,15 +169,13 @@ class WorkflowShapeTest extends TestCase
     }
 
     #[Test]
-    public function workflow_run_blocked_status_means_it_needs_a_continuation(): void
+    public function workflow_run_blocked_status_means_it_is_waiting_on_a_continuation(): void
     {
-        foreach ([WorkflowStatus::Pending, WorkflowStatus::Waiting] as $status) {
-            $run = new WorkflowRun(new WorkflowRunId('wf_run_blocked'), $status);
+        $run = new WorkflowRun(new WorkflowRunId('wf_run_blocked'), WorkflowStatus::Waiting);
 
-            $this->assertTrue($run->blocked(), $status->value);
-        }
+        $this->assertTrue($run->blocked());
 
-        foreach ([WorkflowStatus::Running, WorkflowStatus::Completed, WorkflowStatus::Failed, WorkflowStatus::Cancelled] as $status) {
+        foreach ([WorkflowStatus::Pending, WorkflowStatus::Running, WorkflowStatus::Completed, WorkflowStatus::Failed, WorkflowStatus::Cancelled] as $status) {
             $run = new WorkflowRun(new WorkflowRunId('wf_run_not_blocked'), $status);
 
             $this->assertFalse($run->blocked(), $status->value);
@@ -272,7 +276,7 @@ class WorkflowShapeTest extends TestCase
         $this->assertSame(ThirdPartyReturnWorkflow::class, $started->workflowClass);
         $this->assertSame('ret_123', $started->key);
         $this->assertSame(WorkflowStatus::Pending, $started->status);
-        $this->assertTrue($started->blocked());
+        $this->assertFalse($started->blocked());
 
         $woken = ThirdPartyReturnWorkflow::wakeLater('ret_123', 'exchange-selected', 'variant_1');
 

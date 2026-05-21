@@ -16,7 +16,7 @@ use Attribute;
 final class Step
 {
     /**
-     * @param  ?int  $tries  Explicit attempts for this step, or null to inherit {@see Workflow::$defaultTries} / framework default.
+     * @param  ?int  $tries  Explicit attempts for this step, or null to inherit {@see Workflow::$tries} / framework default.
      */
     public function __construct(
         public ?string $name = null,

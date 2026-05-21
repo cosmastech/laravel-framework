@@ -19,7 +19,7 @@ final class Workflow
      */
     public function __construct(
         public ?string $name = null,
-        public ?int $defaultTries = null,
+        public ?int $tries = null,
         public array $options = [],
     ) {
     }
