@@ -119,9 +119,9 @@ final class Workflow
         return self::keyForModelIdentifier(self::modelIdentifier($key));
     }
 
-    public static function newRunId(string $workflowClass, string $key): WorkflowRunId
+    public static function newRunId(string $workflowClass, string $key): string
     {
-        return new WorkflowRunId('wf_run_for_'.$workflowClass.'#'.$key);
+        return 'wf_run_for_'.$workflowClass.'#'.$key;
     }
 
     public static function normalizeArguments(array $arguments): array

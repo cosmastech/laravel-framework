@@ -18,7 +18,7 @@ namespace Illuminate\Tests\Workflows\Stubs;
 final class WorkflowRun
 {
     public function __construct(
-        public WorkflowRunId $id,
+        public string $id,
         public WorkflowStatus $status,
         public mixed $output = null,
         public ?string $workflowClass = null,

@@ -17,7 +17,6 @@ use Illuminate\Tests\Workflows\Fixtures\ThirdPartyReturnWorkflow;
 use Illuminate\Tests\Workflows\Stubs\Workflow as WorkflowFacadeStub;
 use Illuminate\Tests\Workflows\Stubs\WorkflowContext;
 use Illuminate\Tests\Workflows\Stubs\WorkflowRun;
-use Illuminate\Tests\Workflows\Stubs\WorkflowRunId;
 use Illuminate\Tests\Workflows\Stubs\WorkflowStatus;
 use Illuminate\Tests\Workflows\Stubs\WorkflowWakeResult;
 use InvalidArgumentException;
@@ -151,7 +150,7 @@ class WorkflowShapeTest extends TestCase
 
         // When one durable run of that workflow has completed
         $run = new WorkflowRun(
-            id: new WorkflowRunId('wf_run_return_123'),
+            id: 'wf_run_return_123',
             status: WorkflowStatus::Completed,
             output: ['return_id' => 'ret_123', 'state' => 'exchanged'],
             workflowClass: ThirdPartyReturnWorkflow::class,
@@ -160,7 +159,7 @@ class WorkflowShapeTest extends TestCase
 
         // Then the run is the persisted execution handle, not the workflow class name
         $this->assertSame(ThirdPartyReturnWorkflow::class, $workflowClass);
-        $this->assertSame('wf_run_return_123', $run->id->value);
+        $this->assertSame('wf_run_return_123', $run->id);
         $this->assertSame(ThirdPartyReturnWorkflow::class, $run->workflowClass);
         $this->assertSame('ret_123', $run->key);
         $this->assertSame(WorkflowStatus::Completed, $run->status);
@@ -171,12 +170,12 @@ class WorkflowShapeTest extends TestCase
     #[Test]
     public function workflow_run_blocked_status_means_it_is_waiting_on_a_continuation(): void
     {
-        $run = new WorkflowRun(new WorkflowRunId('wf_run_blocked'), WorkflowStatus::Waiting);
+        $run = new WorkflowRun('wf_run_blocked', WorkflowStatus::Waiting);
 
         $this->assertTrue($run->blocked());
 
         foreach ([WorkflowStatus::Pending, WorkflowStatus::Running, WorkflowStatus::Completed, WorkflowStatus::Failed, WorkflowStatus::Cancelled] as $status) {
-            $run = new WorkflowRun(new WorkflowRunId('wf_run_not_blocked'), $status);
+            $run = new WorkflowRun('wf_run_not_blocked', $status);
 
             $this->assertFalse($run->blocked(), $status->value);
         }
@@ -186,7 +185,7 @@ class WorkflowShapeTest extends TestCase
     public function workflow_wake_result_separates_run_state_from_response(): void
     {
         // Given an existing run that has been woken by an external signal
-        $run = new WorkflowRun(new WorkflowRunId('wf_run_return_123'), WorkflowStatus::Waiting);
+        $run = new WorkflowRun('wf_run_return_123', WorkflowStatus::Waiting);
 
         // When the workflow advances and returns data for the caller
         $result = new WorkflowWakeResult(
