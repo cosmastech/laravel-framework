@@ -35,7 +35,10 @@ trait DatabaseTransactions
                 $connection->unsetEventDispatcher();
                 $connection->rollBack();
                 $connection->setEventDispatcher($dispatcher);
-                $connection->disconnect();
+
+                if ($this->disconnectAfterRollback ?? true) {
+                    $connection->disconnect();
+                }
             }
         });
     }

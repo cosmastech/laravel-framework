@@ -161,7 +161,10 @@ trait RefreshDatabase
 
                 $connection->rollBack();
                 $connection->setEventDispatcher($dispatcher);
-                $connection->disconnect();
+
+                if ($this->disconnectAfterRollback ?? true) {
+                    $connection->disconnect();
+                }
             }
         });
     }

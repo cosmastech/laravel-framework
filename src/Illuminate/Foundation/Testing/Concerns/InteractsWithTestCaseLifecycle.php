@@ -130,9 +130,7 @@ trait InteractsWithTestCaseLifecycle
 
             ParallelTesting::callTearDownTestCaseCallbacks($this);
 
-            $this->app->flush();
-
-            $this->app = null;
+            $this->destroyApplication();
         }
 
         $this->setUpHasRun = false;
@@ -212,6 +210,18 @@ trait InteractsWithTestCaseLifecycle
         if ($this->callbackException) {
             throw $this->callbackException;
         }
+    }
+
+    /**
+     * Destroy the application instance.
+     *
+     * @return void
+     */
+    protected function destroyApplication(): void
+    {
+        $this->app->flush();
+
+        $this->app = null;
     }
 
     /**
